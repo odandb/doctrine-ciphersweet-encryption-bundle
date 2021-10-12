@@ -1,0 +1,87 @@
+services:
+  Odandb\DoctrineCiphersweetEncryptionBundle\Subscribers\DoctrineCiphersweetSubscriber:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Subscribers\DoctrineCiphersweetSubscriber
+    arguments:
+      - "@annotation_reader"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Encryptors\\CiphersweetEncryptor"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexesGenerator"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexableFieldsService"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\PropertyHydratorService"
+    tags:
+      -  { name: doctrine.event_subscriber }
+
+  ParagonIE\CipherSweet\KeyProvider\StringProvider:
+    class: ParagonIE\CipherSweet\KeyProvider\StringProvider
+    public: true
+    arguments: ["%env(DOCTRINE_CIPHERSWEET_KEY)%"]
+
+  ParagonIE\CipherSweet\CipherSweet:
+    class: ParagonIE\CipherSweet\CipherSweet
+    public: true
+    arguments: ["@ParagonIE\\CipherSweet\\KeyProvider\\StringProvider"]
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\CiphersweetEncryptor:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\CiphersweetEncryptor
+    public: true
+    arguments: ["@ParagonIE\\CipherSweet\\CipherSweet"]
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService
+    public: true
+    arguments:
+      - "@annotation_reader"
+      - "@Doctrine\\ORM\\EntityManagerInterface"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexesGenerator"
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Command\GenerateIndexesCommand:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Command\GenerateIndexesCommand
+    public: true
+    arguments:
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexableFieldsService"
+    tags:
+      - { name: console.command }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Command\FieldIndexPlannerCommand:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Command\FieldIndexPlannerCommand
+    public: true
+    tags:
+      - { name: console.command }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Command\EncryptionKeyStringProviderGenerator:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Command\EncryptionKeyStringProviderGenerator
+    public: true
+    tags:
+      - { name: console.command }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators\TokenizerGenerator:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators\TokenizerGenerator
+    tags:
+      - { name: 'odb.index_generator', key: 'TokenizerGenerator' }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators\ValueStartingByGenerator:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators\ValueStartingByGenerator
+    tags:
+      - { name: 'odb.index_generator', key: 'ValueStartingByGenerator'}
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators\ValueEndingByGenerator:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators\ValueEndingByGenerator
+    tags:
+      - { name: 'odb.index_generator', key: 'ValueEndingByGenerator' }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerator:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerator
+    public: true
+    arguments:
+      - !tagged_locator { tag: 'odb.index_generator', index_by: 'key' }
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Encryptors\\EncryptorInterface"
+    tags:
+      - { name: container.service_subscriber }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\PropertyHydratorService:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\PropertyHydratorService
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\CiphersweetEncryptor
+    public: true
+    arguments:
+      - "@ParagonIE\\CipherSweet\\CipherSweet"

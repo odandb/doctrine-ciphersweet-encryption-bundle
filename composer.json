@@ -1,0 +1,39 @@
+{
+    "name": "odandb/doctrine-ciphersweet-encryption-bundle",
+    "description": "Bridge between Doctrine and Ciphersweet libary in order to make encrypted and searchable fields",
+    "type": "symfony-bundle",
+    "require": {
+        "php": "^7.4",
+        "paragonie/ciphersweet": "^3.0",
+        "symfony/property-access": "^3.4|^4.4|^5.1",
+        "symfony/property-info": "^3.4|^4.4|^5.1",
+        "symfony/console": "^3.4|^4.4|^5.1",
+        "symfony/config": "^3.4|^4.4|^5.1",
+        "symfony/dependency-injection": "^3.4|^4.4|^5.1",
+        "symfony/yaml": "^3.4|^4.4|^5.1",
+        "doctrine/orm": "^2.7",
+        "symfony/process": "^3.4|^4.4|^5.1"
+    }
+    ,
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "symfony/phpunit-bridge": "^3.4|^4.4|^5.1"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Odandb\\DoctrineCiphersweetEncryptionBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Odandb\\DoctrineCiphersweetEncryptionBundle\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mathieu Girard",
+            "email": "mathieu.girard@odandb.com"
+        }
+    ]
+}
