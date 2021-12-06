@@ -171,7 +171,7 @@ class IndexableFieldsService
 
             $indexesToEncrypt = $searchIndexes[$refProperty->getName()];
 
-            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt);
+            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing);
 
             // On crée les instances d'objet filtre et on les associe à l'entité parente
             $indexEntities = [];

@@ -16,4 +16,5 @@ class IndexableField
     public string $indexesEntityClass;
     public array $indexesGenerationMethods;
     public string $valuePreprocessMethod;
+    public bool $fastIndexing = true;
 }

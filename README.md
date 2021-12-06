@@ -15,7 +15,7 @@ Add this repositories section on your composer.json project.
 "repositories": [
     {
         "type": "vcs",
-        "url": "git@dev.odandb.com:odandb/doctrine-ciphersweet-encryption-bundle.git"
+        "url": "git@github.com:odandb/doctrine-ciphersweet-encryption-bundle.git"
     }
 ],
 ```
@@ -80,6 +80,7 @@ This annotation comes with 4 options:
 - (string) $indexesEntityClass : Name of the entity class that will store the indexes (can be mutualized)
 - (string) $valuePreprocessMethod : Before indexes generation, you may need to clean your input in order to reduce the number of indexes to generate (trim value, slug it, etc.). You can do it by setting this option. For the moment, the method mention can only by related to the current entity class.
 - (array) $indexesGenerationMethods : List of methods used to generate several searchable values from the original one. For example the `ValueStartingByGenerator` can take the value "abcdef" in order to generate indexes for ["a", "ab", "abc', "abcd", ...]. So that you can search entities with a field starting by those values.
+- (bool) $fastIndexing : If true, will use a faster indexing method.
 
 ### 3. Generating indexes
 To make the entities searchable, the library provides a feature called "Blind Index" which is a unique index calculated from the original value.

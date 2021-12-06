@@ -9,7 +9,6 @@ use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\IndexableField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService;
-use Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerator;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Services\PropertyHydratorService;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\EventSubscriber;
@@ -47,8 +46,6 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private array $postFlushDecryptQueue = [];
 
-    private IndexesGenerator $indexesGenerator;
-
     private IndexableFieldsService $indexableFieldsService;
 
     private PropertyHydratorService $propertyHydratorService;
@@ -59,14 +56,12 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
     public function __construct(
         Reader                  $annReader,
         EncryptorInterface      $encryptorClass,
-        IndexesGenerator        $generator,
         IndexableFieldsService  $indexableFieldsService,
         PropertyHydratorService $propertyHydratorService
     )
     {
         $this->annReader = $annReader;
         $this->encryptor = $encryptorClass;
-        $this->indexesGenerator = $generator;
         $this->indexableFieldsService = $indexableFieldsService;
         $this->propertyHydratorService = $propertyHydratorService;
     }
@@ -94,10 +89,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
     public function onClear(OnClearEventArgs $args): void
     {
-        unset($this->_originalValues);
-        unset($this->decodedRegistry);
-        unset($this->encryptedFieldCache);
-        unset($this->postFlushDecryptQueue);
+        unset($this->_originalValues, $this->decodedRegistry, $this->encryptedFieldCache, $this->postFlushDecryptQueue);
 
         $this->_originalValues = [];
         $this->decodedRegistry = [];
@@ -245,6 +237,9 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private function handleEncryptOperation(object $entity, string $oid, $value, \ReflectionProperty $refProperty, EntityManagerInterface $em, array $context, ?string $force = null)
     {
+        /**
+         * @var IndexableField $indexableAnnotationConfig
+         */
         [
             'annotationConfig' => [
                 'blindIndex' => $storeBlindIndex,
@@ -259,14 +254,14 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
         if ('encrypt' === $force) {
             $originalValue = $value;
-            $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits);
+            $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits, $indexableAnnotationConfig->fastIndexing ?? true);
             $this->storeIndexes($entity, $refProperty, $indexableAnnotationConfig, $originalValue);
         } else {
             if (isset($this->_originalValues[$oid][$refProperty->getName()])) {
                 $oldValue = $this->_originalValues[$oid][$refProperty->getName()];
 
                 if ($this->isValueEncrypted($oldValue)) {
-                    $oldValue = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $oldValue, $filterBits);
+                    $oldValue = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $oldValue, $filterBits, $indexableAnnotationConfig->fastIndexing ?? true);
                 }
             } else {
                 $oldValue = null;
@@ -276,7 +271,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
                 $value = $oldValue;
             } else {
                 $originalValue = $value;
-                $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits);
+                $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits, $indexableAnnotationConfig->fastIndexing ?? true);
                 $this->storeIndexes($entity, $refProperty, $indexableAnnotationConfig, $originalValue);
             }
         }
@@ -293,17 +288,21 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private function handleDecryptOperation(string $oid, $value, \ReflectionProperty $refProperty, array $context): string
     {
+        /**
+         * @var IndexableField $indexableAnnotationConfig
+         */
         [
             'annotationConfig' => [
                 'filterBits' => $filterBits,
             ],
+            'indexableAnnotation' => $indexableAnnotationConfig,
             'entityClassName' => $entityClassName,
         ] = $context;
 
         $this->_originalValues[$oid][$refProperty->getName()] = $value;
 
         if ($this->isValueEncrypted($value)) {
-            $value = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $value, $filterBits);
+            $value = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $value, $filterBits, $indexableAnnotationConfig->fastIndexing);
         }
 
         return $value;
@@ -324,15 +323,16 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      * @param $value
      * @param bool $storeBlindIndex
      * @param int $filterBits
+     * @param bool $fastIndexing
      * @return mixed
      */
-    private function storeValue(object $entity, \ReflectionProperty $refProperty, $value, bool $storeBlindIndex, int $filterBits)
+    private function storeValue(object $entity, \ReflectionProperty $refProperty, $value, bool $storeBlindIndex, int $filterBits, bool $fastIndexing = true)
     {
         if ($value === '') {
             return '';
         }
 
-        [$value, $indexes] = $this->encryptor->prepareForStorage($entity, $refProperty->getName(), $value, $storeBlindIndex, $filterBits);
+        [$value, $indexes] = $this->encryptor->prepareForStorage($entity, $refProperty->getName(), $value, $storeBlindIndex, $filterBits, $fastIndexing);
 
         if ($storeBlindIndex === true) {
             foreach ($indexes as $key => $blindIndexValue) {
