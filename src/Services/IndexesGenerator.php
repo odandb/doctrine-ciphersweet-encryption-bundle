@@ -68,9 +68,10 @@ class IndexesGenerator implements ServiceSubscriberInterface
      * @param string $entityName
      * @param string $fieldname
      * @param string[] $possibleValues
+     * @param bool $fastIndexing
      * @return array
      */
-    public function generateBlindIndexesFromPossibleValues(string $entityName, string $fieldname, array $possibleValues): array
+    public function generateBlindIndexesFromPossibleValues(string $entityName, string $fieldname, array $possibleValues, bool $fastIndexing): array
     {
         $possibleValues = array_unique($possibleValues);
 
@@ -79,7 +80,7 @@ class IndexesGenerator implements ServiceSubscriberInterface
             if ($pvalue === '' || $pvalue === null) {
                 continue;
             }
-            $indexes[] = $this->encryptor->getBlindIndex($entityName, $fieldname, $pvalue);
+            $indexes[] = $this->encryptor->getBlindIndex($entityName, $fieldname, $pvalue, EncryptorInterface::DEFAULT_FILTER_BITS, $fastIndexing);
         }
 
         return $indexes;

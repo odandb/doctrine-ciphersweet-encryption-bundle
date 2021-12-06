@@ -4,7 +4,6 @@ services:
     arguments:
       - "@annotation_reader"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Encryptors\\CiphersweetEncryptor"
-      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexesGenerator"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexableFieldsService"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\PropertyHydratorService"
     tags:
