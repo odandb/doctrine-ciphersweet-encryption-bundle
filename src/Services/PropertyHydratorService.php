@@ -8,24 +8,19 @@ namespace Odandb\DoctrineCiphersweetEncryptionBundle\Services;
 
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
-use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
 
 class PropertyHydratorService
 {
-    private PropertyInfoExtractor $propertyInfoExtractor;
+    private PropertyInfoExtractorInterface $propertyInfoExtractor;
 
     private PropertyAccessorInterface $propertyAccessor;
 
-    public function __construct()
+    public function __construct(PropertyInfoExtractorInterface $propertyInfoExtractor, PropertyAccessorInterface $propertyAccessor = null)
     {
-        $phpDocExtractor = new PhpDocExtractor();
-        $reflectionExtractor = new ReflectionExtractor();
-        $typeExtractors = [$phpDocExtractor, $reflectionExtractor];
-        $this->propertyInfoExtractor = new PropertyInfoExtractor([], $typeExtractors);
-        $this->propertyAccessor = PropertyAccess::createPropertyAccessor();
+        $this->propertyInfoExtractor = $propertyInfoExtractor;
+        $this->propertyAccessor = $propertyAccessor ?? PropertyAccess::createPropertyAccessor();
     }
 
     /**
