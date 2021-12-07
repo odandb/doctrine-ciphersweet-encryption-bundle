@@ -1,25 +1,43 @@
 {
     "name": "odandb/doctrine-ciphersweet-encryption-bundle",
-    "description": "Bridge between Doctrine and Ciphersweet libary in order to make encrypted and searchable fields",
     "type": "symfony-bundle",
+    "description": "Bridge between Doctrine and Ciphersweet libary in order to make encrypted and searchable fields",
+    "keywords": [
+        "doctrine",
+        "encryption",
+        "cipher"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mathieu Girard",
+            "email": "mathieu.girard@odandb.com"
+        },
+        {
+            "name": "OD&B",
+            "homepage": "https://www.odandb.com/"
+        }
+    ],
     "require": {
-        "php": "^7.4",
-        "paragonie/ciphersweet": "^3.0",
-        "symfony/property-access": "^3.4|^4.4|^5.1",
-        "symfony/property-info": "^3.4|^4.4|^5.1",
-        "symfony/console": "^3.4|^4.4|^5.1",
-        "symfony/config": "^3.4|^4.4|^5.1",
-        "symfony/dependency-injection": "^3.4|^4.4|^5.1",
-        "symfony/yaml": "^3.4|^4.4|^5.1",
+        "php": ">=7.4",
         "doctrine/orm": "^2.7",
-        "symfony/process": "^3.4|^4.4|^5.1"
-    }
-    ,
+        "paragonie/ciphersweet": "^3.0",
+        "symfony/config": "^4.4 || ^5.1 || ^6.0",
+        "symfony/console": "^4.4 || ^5.1 || ^6.0",
+        "symfony/dependency-injection": "^4.4 || ^5.1 || ^6.0",
+        "symfony/http-kernel": "^4.4 || ^5.1 || ^6.0",
+        "symfony/process": "^4.4 || ^5.1 || ^6.0",
+        "symfony/property-access": "^4.4 || ^5.1 || ^6.0",
+        "symfony/property-info": "^4.4 || ^5.1 || ^6.0",
+        "symfony/yaml": "^4.4 || ^5.1 || ^6.0"
+    },
     "require-dev": {
         "roave/security-advisories": "dev-latest",
-        "symfony/phpunit-bridge": "^3.4|^4.4|^5.1"
+        "symfony/phpunit-bridge": "^5.1 || ^6.0"
     },
-    "license": "MIT",
+    "config": {
+        "sort-packages": true
+    },
     "autoload": {
         "psr-4": {
             "Odandb\\DoctrineCiphersweetEncryptionBundle\\": "src/"
@@ -29,11 +47,5 @@
         "psr-4": {
             "Odandb\\DoctrineCiphersweetEncryptionBundle\\Tests\\": "tests/"
         }
-    },
-    "authors": [
-        {
-            "name": "Mathieu Girard",
-            "email": "mathieu.girard@odandb.com"
-        }
-    ]
+    }
 }
