@@ -78,6 +78,9 @@ services:
 
   Odandb\DoctrineCiphersweetEncryptionBundle\Services\PropertyHydratorService:
     class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\PropertyHydratorService
+    arguments:
+      - '@property_info'
+      - '@property_accessor'
 
   Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface:
     class: Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\CiphersweetEncryptor

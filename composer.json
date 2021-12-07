@@ -35,6 +35,9 @@
         "roave/security-advisories": "dev-latest",
         "symfony/phpunit-bridge": "^5.1 || ^6.0"
     },
+    "suggest": {
+        "phpdocumentor/reflection-docblock": "To use the PHPDoc"
+    },
     "config": {
         "sort-packages": true
     },
