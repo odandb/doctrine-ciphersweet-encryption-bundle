@@ -8,6 +8,7 @@ namespace Odandb\DoctrineCiphersweetEncryptionBundle\Services;
 
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\IndexableField;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Entity\IndexedEntityInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\MissingPropertyFromReflectionException;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -171,7 +172,7 @@ class IndexableFieldsService
 
             $indexesToEncrypt = $searchIndexes[$refProperty->getName()];
 
-            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing);
+            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing ?? EncryptorInterface::DEFAULT_FAST_INDEXING);
 
             // On crée les instances d'objet filtre et on les associe à l'entité parente
             $indexEntities = [];
