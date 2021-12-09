@@ -254,14 +254,14 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
         if ('encrypt' === $force) {
             $originalValue = $value;
-            $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits, $indexableAnnotationConfig->fastIndexing ?? true);
+            $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits, $indexableAnnotationConfig->fastIndexing ?? EncryptorInterface::DEFAULT_FAST_INDEXING);
             $this->storeIndexes($entity, $refProperty, $indexableAnnotationConfig, $originalValue);
         } else {
             if (isset($this->_originalValues[$oid][$refProperty->getName()])) {
                 $oldValue = $this->_originalValues[$oid][$refProperty->getName()];
 
                 if ($this->isValueEncrypted($oldValue)) {
-                    $oldValue = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $oldValue, $filterBits, $indexableAnnotationConfig->fastIndexing ?? true);
+                    $oldValue = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $oldValue, $filterBits, $indexableAnnotationConfig->fastIndexing ?? EncryptorInterface::DEFAULT_FAST_INDEXING);
                 }
             } else {
                 $oldValue = null;
@@ -271,7 +271,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
                 $value = $oldValue;
             } else {
                 $originalValue = $value;
-                $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits, $indexableAnnotationConfig->fastIndexing ?? true);
+                $value = $this->storeValue($entity, $refProperty, $value, $storeBlindIndex, $filterBits, $indexableAnnotationConfig->fastIndexing ?? EncryptorInterface::DEFAULT_FAST_INDEXING);
                 $this->storeIndexes($entity, $refProperty, $indexableAnnotationConfig, $originalValue);
             }
         }
@@ -302,7 +302,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         $this->_originalValues[$oid][$refProperty->getName()] = $value;
 
         if ($this->isValueEncrypted($value)) {
-            $value = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $value, $filterBits, $indexableAnnotationConfig->fastIndexing);
+            $value = $this->encryptor->decrypt($entityClassName, $refProperty->getName(), $value, $filterBits, $indexableAnnotationConfig->fastIndexing ?? EncryptorInterface::DEFAULT_FAST_INDEXING);
         }
 
         return $value;
