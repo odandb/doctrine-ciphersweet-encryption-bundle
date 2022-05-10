@@ -267,7 +267,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
                 $oldValue = null;
             }
 
-            if ($oldValue === $value || (null === $oldValue && null === $value)) {
+            if (($this->isValueEncrypted($oldValue) && $oldValue === $value) || (null === $oldValue && null === $value)) {
                 $value = $oldValue;
             } else {
                 $originalValue = $value;
@@ -309,12 +309,12 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
     }
 
     /**
-     * @param string $value
+     * @param null|string $value
      * @return bool
      */
-    private function isValueEncrypted(string $value): bool
+    private function isValueEncrypted(?string $value): bool
     {
-        return strpos($value, $this->encryptor->getPrefix()) === 0;
+        return $value !== null && strpos($value, $this->encryptor->getPrefix()) === 0;
     }
 
     /**
