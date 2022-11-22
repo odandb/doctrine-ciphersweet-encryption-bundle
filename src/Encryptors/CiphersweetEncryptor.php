@@ -25,11 +25,25 @@ class CiphersweetEncryptor implements EncryptorInterface
 
     public function prepareForStorage(object $entity, string $fieldName, string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
     {
-        $entitClassName= \get_class($entity);
+        $entitClassName = \get_class($entity);
+
+        $output = [];
         if (isset($this->cache[$entitClassName][$fieldName][$string])) {
-            return $this->cache[$entitClassName][$fieldName][$string];
+            $output[] = $this->cache[$entitClassName][$fieldName][$string];
+            if ($index) {
+                $output[] = [$fieldName.'_bi' => $this->getBlindIndex($entitClassName, $fieldName, $string, $filterBits, $fastIndexing)];
+            } else {
+                $output[] = [];
+            }
+
+            return $output;
         }
 
+        return $this->doEncrypt($entitClassName, $fieldName, $string, $index, $filterBits, $fastIndexing);
+    }
+
+    protected function doEncrypt(string $entitClassName, string $fieldName, string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
+    {
         $encryptedField =  (new EncryptedField($this->engine, $entitClassName, $fieldName));
         if ($index) {
             $encryptedField->addBlindIndex(
@@ -39,18 +53,32 @@ class CiphersweetEncryptor implements EncryptorInterface
 
         $result = $encryptedField->prepareForStorage($string);
 
-        $this->cache[$entitClassName][$fieldName][$string] = $result;
+        $this->cache[$entitClassName][$fieldName][$string] = $result[0];
+        $this->cache[$entitClassName][$fieldName][$result[0]] = $string;
+
+        $this->biCache[$entitClassName][$fieldName][$string] = $result[1][$fieldName.'_bi'];
 
         return $result;
     }
 
     public function decrypt(string $entity_classname, string $fieldName, string $string, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
-        return (new EncryptedField($this->engine, $entity_classname, $fieldName))
-            ->addBlindIndex(
-                new BlindIndex($fieldName.'_bi', [], $filterBits, $fastIndexing)
-            )
+        if (isset($this->cache[$entity_classname][$fieldName][$string])) {
+            return $this->cache[$entity_classname][$fieldName][$string];
+        }
+
+        return $this->doDecrypt($entity_classname, $fieldName, $string);
+    }
+
+    protected function doDecrypt(string $entity_classname, string $fieldName, string $string): string
+    {
+        $decryptedValue = (new EncryptedField($this->engine, $entity_classname, $fieldName))
             ->decryptValue($string);
+
+        $this->cache[$entity_classname][$fieldName][$string] = $decryptedValue;
+        $this->cache[$entity_classname][$fieldName][$decryptedValue] = $string;
+
+        return $decryptedValue;
     }
 
     public function getBlindIndex($entityName, $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
@@ -59,6 +87,11 @@ class CiphersweetEncryptor implements EncryptorInterface
             return $this->biCache[$entityName][$fieldName][$value];
         }
 
+        return $this->doGetBlindIndex($entityName, $fieldName, $value, $filterBits, $fastIndexing);
+    }
+
+    private function doGetBlindIndex($entityName, $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    {
         $index = (new EncryptedField($this->engine, $entityName, $fieldName))
             ->addBlindIndex(
                 new BlindIndex($fieldName.'_bi', [], $filterBits, $fastIndexing)

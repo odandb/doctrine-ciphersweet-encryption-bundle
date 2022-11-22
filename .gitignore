@@ -3,3 +3,12 @@
 phpunit.xml
 .phpunit.result.cache
 composer.lock
+.idea/
+cache/
+var/
+tests/coverage/
+.DS_Store
+.php_cs.cache
+.php-cs-fixer.cache
+*.sqlite
+.preload.php
