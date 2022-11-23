@@ -13,10 +13,10 @@ class ValueEndingByGenerator implements IndexesGeneratorInterface
      */
     public function generate(string $value): array
     {
-        $possibleValues[] = $value;
+        $possibleValues = [];
 
-        for($i=1, $len = mb_strlen($value); $i < $len; $i++) {
-            $possibleValues[] = mb_substr($value, 0, -$i);
+        for($i=1, $len = mb_strlen($value); $i <= $len; $i++) {
+            $possibleValues[] = mb_substr($value, -$i);
         }
 
         return $possibleValues;

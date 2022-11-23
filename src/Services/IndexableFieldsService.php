@@ -6,12 +6,12 @@ declare(strict_types=1);
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Services;
 
 
+use Doctrine\ORM\EntityRepository;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\IndexableField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Entity\IndexedEntityInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\MissingPropertyFromReflectionException;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -33,7 +33,7 @@ class IndexableFieldsService
 
     public function getChunksForMultiThread(string $className, int $chuncksLength): array
     {
-        /** @var ServiceEntityRepository $repo */
+        /** @var EntityRepository $repo */
         $repo = $this->em->getRepository($className);
         $result = $repo->createQueryBuilder('c')
             ->select('c.id')
