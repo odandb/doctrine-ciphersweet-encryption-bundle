@@ -56,7 +56,9 @@ class CiphersweetEncryptor implements EncryptorInterface
         $this->cache[$entitClassName][$fieldName][$string] = $result[0];
         $this->cache[$entitClassName][$fieldName][$result[0]] = $string;
 
-        $this->biCache[$entitClassName][$fieldName][$string] = $result[1][$fieldName.'_bi'];
+        if ($index) {
+            $this->biCache[$entitClassName][$fieldName][$string] = $result[1][$fieldName.'_bi'];
+        }
 
         return $result;
     }
