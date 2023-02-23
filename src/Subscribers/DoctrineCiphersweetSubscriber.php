@@ -46,6 +46,8 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private array $postFlushDecryptQueue = [];
 
+    private array $entitiesToEncrypt = [];
+
     private IndexableFieldsService $indexableFieldsService;
 
     private PropertyHydratorService $propertyHydratorService;
@@ -84,6 +86,12 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         foreach ($unitOfWork->getScheduledEntityUpdates() as $entity) {
             $this->entityOnFlush($entity, $em);
             $unitOfWork->recomputeSingleEntityChangeSet($em->getClassMetadata(\get_class($entity)), $entity);
+            unset($this->entitiesToEncrypt[spl_object_id($entity)]);
+        }
+
+        foreach ($this->entitiesToEncrypt as $entity) {
+            $this->entityOnFlush($entity, $em);
+            $unitOfWork->recomputeSingleEntityChangeSet($em->getClassMetadata(\get_class($entity)), $entity);
         }
     }
 
@@ -105,7 +113,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private function entityOnFlush(object $entity, EntityManagerInterface $em): void
     {
-        $objId = spl_object_hash($entity);
+        $objId = spl_object_id($entity);
 
         $fields = [];
 
@@ -161,7 +169,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         $properties = $this->getEncryptedFields($entity, $em);
         $unitOfWork = $em->getUnitOfWork();
 
-        $oid = spl_object_hash($entity);
+        $oid = spl_object_id($entity);
 
         $entityClassName = $em->getClassMetadata(get_class($entity))->getName();
 
@@ -175,8 +183,12 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
             $context = $this->buildContext($entityClassName, $refProperty);
 
             if ($isEncryptOperation) {
-                $value = $this->handleEncryptOperation($entity, $oid, $value, $refProperty, $em, $context, $force);
+                $value = $this->handleEncryptOperation($entity, $oid, $value, $refProperty, $context, $force);
             } else {
+                $oldValue = $value;
+                if (!$this->isValueEncrypted($oldValue)) {
+                    $this->entitiesToEncrypt[$oid] = $entity;
+                }
                 $value = $this->handleDecryptOperation($oid, $value, $refProperty, $context);
             }
 
@@ -189,7 +201,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
             if (!$isEncryptOperation && !\defined('_DONOTENCRYPT')) {
                 //we don't want the object to be dirty immediately after reading
-                $unitOfWork->setOriginalEntityProperty($oid, $refProperty->getName(), $value);
+                $unitOfWork->setOriginalEntityProperty(spl_object_id($entity), $refProperty->getName(), $value);
             }
         }
 
@@ -224,10 +236,9 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
     /**
      * @param object $entity
-     * @param string $oid
+     * @param int $oid
      * @param mixed $value
      * @param \ReflectionProperty $refProperty
-     * @param EntityManagerInterface $em
      * @param array $context
      * @param string|null $force
      * @return mixed|string|null
@@ -235,7 +246,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      * @throws \Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException
      * @throws \ReflectionException
      */
-    private function handleEncryptOperation(object $entity, string $oid, $value, \ReflectionProperty $refProperty, EntityManagerInterface $em, array $context, ?string $force = null)
+    private function handleEncryptOperation(object $entity, int $oid, $value, \ReflectionProperty $refProperty, array $context, ?string $force = null)
     {
         /**
          * @var IndexableField $indexableAnnotationConfig
@@ -280,13 +291,13 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
     }
 
     /**
-     * @param string $oid
+     * @param int $oid
      * @param mixed $value
      * @param \ReflectionProperty $refProperty
      * @param array $context
      * @return string
      */
-    private function handleDecryptOperation(string $oid, $value, \ReflectionProperty $refProperty, array $context): string
+    private function handleDecryptOperation(int $oid, $value, \ReflectionProperty $refProperty, array $context): string
     {
         /**
          * @var IndexableField $indexableAnnotationConfig
@@ -376,12 +387,12 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     public function postFlush(PostFlushEventArgs $args): void
     {
-        $unitOfWork = $args->getEntityManager()->getUnitOfWork();
+        $unitOfWork = $args->getObjectManager()->getUnitOfWork();
 
         foreach ($this->postFlushDecryptQueue as $pair) {
             $fieldPairs = $pair['fields'];
             $entity = $pair['entity'];
-            $oid = spl_object_hash($entity);
+            $oid = spl_object_id($entity);
 
             foreach ($fieldPairs as $fieldPair) {
                 /** @var \ReflectionProperty $field */
@@ -402,7 +413,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private function addToDecodedRegistry($entity): void
     {
-        $this->decodedRegistry[spl_object_hash($entity)] = true;
+        $this->decodedRegistry[spl_object_id($entity)] = true;
     }
 
     /**
@@ -411,8 +422,8 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     public function postLoad(LifecycleEventArgs $args): void
     {
-        $entity = $args->getEntity();
-        if (!$this->hasInDecodedRegistry($entity) && $this->processFields($entity, $args->getEntityManager(), false)) {
+        $entity = $args->getObject();
+        if (!$this->hasInDecodedRegistry($entity) && $this->processFields($entity, $args->getObjectManager(), false)) {
             $this->addToDecodedRegistry($entity);
         }
     }
@@ -424,7 +435,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private function hasInDecodedRegistry(object $entity): bool
     {
-        return isset($this->decodedRegistry[spl_object_hash($entity)]);
+        return isset($this->decodedRegistry[spl_object_id($entity)]);
     }
 
     /**
