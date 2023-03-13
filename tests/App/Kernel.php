@@ -15,7 +15,7 @@ class Kernel extends BaseKernel
 {
     use MicroKernelTrait;
 
-    private const CONFIG_EXTS = '.{php,xml,yaml,yml}';
+    private const CONFIG_EXTS = '.{yaml,yml}';
 
     public function registerBundles(): iterable
     {
@@ -40,6 +40,12 @@ class Kernel extends BaseKernel
 
         $loader->load($this->getProjectDir().'/config/services'.self::CONFIG_EXTS, 'glob');
         $loader->load($this->getProjectDir().'/config/{packages}/*'.self::CONFIG_EXTS, 'glob');
+
+        if (PHP_VERSION_ID >= 80000) {
+            $loader->load($this->getProjectDir().'/config/doctrine80'.self::CONFIG_EXTS, 'glob');
+        } else {
+            $loader->load($this->getProjectDir().'/config/doctrine74'.self::CONFIG_EXTS, 'glob');
+        }
 
         $confDir = $this->getProjectDir().'/../../src/Resources/config';
         $loader->load($confDir.'/encryption-services'.self::CONFIG_EXTS, 'glob');

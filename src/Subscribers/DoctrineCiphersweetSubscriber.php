@@ -149,10 +149,25 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         $encryptedFields = [];
 
         foreach ($meta->getReflectionProperties() as $refProperty) {
+            if (PHP_VERSION_ID >= 80000 && isset($refProperty->getAttributes(self::ENCRYPTED_ANN_NAME)[0])) {
+                $refProperty->setAccessible(true);
+                $encryptedFields[] = $refProperty;
+
+                continue;
+            }
+
             /** @var \ReflectionProperty $refProperty */
             if ($this->annReader->getPropertyAnnotation($refProperty, self::ENCRYPTED_ANN_NAME)) {
                 $refProperty->setAccessible(true);
                 $encryptedFields[] = $refProperty;
+
+                if (PHP_VERSION_ID >= 80000) {
+                    trigger_deprecation(
+                        'odandb/doctrine-ciphersweet-encryption-bundle',
+                        '0.10.5',
+                        'The support of annotation is deprecated and will be remove in doctrine-ciphersweet-encryption-bundle 1.0'
+                    );
+                }
             }
         }
 
@@ -210,8 +225,32 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
     private function buildContext(string $entityClassName, \ReflectionProperty $refProperty): array
     {
-        $annotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::ENCRYPTED_ANN_NAME);
-        $indexableAnnotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::INDEXABLE_ANN_NAME);
+        $annotationConfig = null;
+        $indexableAnnotationConfig = null;
+        if (PHP_VERSION_ID >= 80000) {
+            $refEncryptedAttributes = $refProperty->getAttributes(self::ENCRYPTED_ANN_NAME);
+            $refIndexableAttributes = $refProperty->getAttributes(self::INDEXABLE_ANN_NAME);
+
+            if (isset($refEncryptedAttributes[0])) {
+                $annotationConfig = $refEncryptedAttributes[0]->newInstance();
+            }
+            if (isset($refIndexableAttributes[0])) {
+                $indexableAnnotationConfig = $refIndexableAttributes[0]->newInstance();
+            }
+        }
+
+        if (null === $annotationConfig && null === $indexableAnnotationConfig) {
+            $annotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::ENCRYPTED_ANN_NAME);
+            $indexableAnnotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::INDEXABLE_ANN_NAME);
+
+            if (PHP_VERSION_ID >= 80000) {
+                trigger_deprecation(
+                    'odandb/doctrine-ciphersweet-encryption-bundle',
+                    '0.10.5',
+                    'The support of annotation is deprecated and will be remove in doctrine-ciphersweet-encryption-bundle 1.0'
+                );
+            }
+        }
 
         $storeBlindIndex = true;
         $filterBits = EncryptorInterface::DEFAULT_FILTER_BITS;
@@ -220,7 +259,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         if ($annotationConfig instanceof EncryptedField) {
             $storeBlindIndex = $annotationConfig->indexable;
             $filterBits = $annotationConfig->filterBits;
-            $mappedTypedProperty = $annotationConfig->mappedTypedProperty ?? null;
+            $mappedTypedProperty = $annotationConfig->mappedTypedProperty;
         }
 
         return [
@@ -249,7 +288,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
     private function handleEncryptOperation(object $entity, int $oid, $value, \ReflectionProperty $refProperty, array $context, ?string $force = null)
     {
         /**
-         * @var IndexableField $indexableAnnotationConfig
+         * @var null|IndexableField $indexableAnnotationConfig
          */
         [
             'annotationConfig' => [
@@ -262,6 +301,9 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         ] = $context;
 
         $value = $this->propertyHydratorService->getMappedFieldValueAsString($entity, $mappedTypedProperty, $value);
+        if ('' === $value) {
+            return null;
+        }
 
         if ('encrypt' === $force) {
             $originalValue = $value;
@@ -369,7 +411,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
             return;
         }
 
-        $autoRefresh = $indexableAnnotationConfig->autoRefresh ?? false;
+        $autoRefresh = $indexableAnnotationConfig->autoRefresh;
         if ($autoRefresh === false) {
             return;
         }

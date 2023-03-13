@@ -4,12 +4,10 @@ namespace Odandb\DoctrineCiphersweetEncryptionBundle\Tests\Unit\Encryptors;
 
 use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\CiphersweetEncryptor;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Tests\Encryptors\CiphersweetEncryptorObservable;
-use Odandb\DoctrineCiphersweetEncryptionBundle\Tests\Model\MyEntity;
-use ParagonIE\CipherSweet\Backend\BoringCrypto;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Tests\Model\Annotations\MyEntity;
 use ParagonIE\CipherSweet\Backend\ModernCrypto;
 use ParagonIE\CipherSweet\CipherSweet;
 use ParagonIE\CipherSweet\KeyProvider\RandomProvider;
-use ParagonIE\CipherSweet\KeyProvider\StringProvider;
 use PHPUnit\Framework\TestCase;
 
 class CiphersweetEncryptorTest extends TestCase
