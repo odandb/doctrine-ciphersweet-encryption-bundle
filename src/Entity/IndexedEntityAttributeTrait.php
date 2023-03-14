@@ -7,30 +7,23 @@ namespace Odandb\DoctrineCiphersweetEncryptionBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
-trait IndexedEntityTrait
+trait IndexedEntityAttributeTrait
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     protected int $id;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
+    #[ORM\Column(type: 'string', length: 255)]
     protected string $fieldname;
 
     /**
      * onDeleteCascade -> If we delete $targetEntity, we need to delete cascade to the list EntityFilters
-     *
-     * @ORM\JoinColumn(name="target_entity_id", referencedColumnName="id", onDelete="CASCADE")
      */
+    #[ORM\JoinColumn(name: 'target_entity_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
     protected object $targetEntity;
 
-    /**
-     * @ORM\Column(type="string", length=10)
-     */
+    #[ORM\Column(type: 'string', length: 10)]
     protected string $indexBi;
 
     public function getId(): ?int

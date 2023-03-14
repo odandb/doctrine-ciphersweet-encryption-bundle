@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Command;
 
 use Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,10 +16,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
+#[AsCommand(name: 'odb:enc:indexes', description: 'Determine the Blind Index plan for a given field.')]
 class GenerateIndexesCommand extends Command
 {
+    /** @deprecated  */
     protected static $defaultName = 'odb:enc:indexes';
-    protected static $defaultAlias = 'o:e:i';
+    /** @deprecated  */
+    protected static $defaultDescription = 'Determine the Blind Index plan for a given field.';
+
+    protected static string $defaultAlias = 'o:e:i';
 
     protected const CONSOLE_ENTRYPOINT = 'bin/console';
     protected const NB_RUNNING_PROCESSES = 5;
@@ -39,7 +45,6 @@ class GenerateIndexesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setDescription('Determine the Blind Index plan for a given field.')
             ->setAliases([self::$defaultAlias])
             ->addArgument('class', InputArgument::REQUIRED, 'The entity class having fields that need a complete indexes recalculation.')
 

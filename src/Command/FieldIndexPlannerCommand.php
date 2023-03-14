@@ -7,20 +7,25 @@ namespace Odandb\DoctrineCiphersweetEncryptionBundle\Command;
 
 
 use ParagonIE\CipherSweet\Planner\FieldIndexPlanner;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'odb:enc:planner', description: 'Determine the Blind Index plan for a given field.')]
 class FieldIndexPlannerCommand extends Command
 {
+    /** @deprecated  */
     protected static $defaultName = 'odb:enc:planner';
-    protected static $defaultAlias = 'o:e:pl';
+    /** @deprecated  */
+    protected static $defaultDescription = 'Determine the Blind Index plan for a given field.';
+
+    protected static string $defaultAlias = 'o:e:pl';
 
     protected function configure(): void
     {
         $this
-            ->setDescription('Determine the Blind Index plan for a given field.')
             ->setAliases([self::$defaultAlias])
         ;
     }

@@ -17,7 +17,6 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class IndexableFieldsService
 {
-    public const ENCRYPTED_ANN_NAME = EncryptedField::class;
     public const INDEXABLE_ANN_NAME = IndexableField::class;
 
     private Reader $annReader;
@@ -33,7 +32,6 @@ class IndexableFieldsService
 
     public function getChunksForMultiThread(string $className, int $chuncksLength): array
     {
-        /** @var EntityRepository $repo */
         $repo = $this->em->getRepository($className);
         $result = $repo->createQueryBuilder('c')
             ->select('c.id')
@@ -63,7 +61,21 @@ class IndexableFieldsService
                 throw new MissingPropertyFromReflectionException(sprintf("No refProperty found for fieldname %s", $fieldname));
             }
 
-            $indexableAnnotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::INDEXABLE_ANN_NAME);
+            $indexableAnnotationConfig = null;
+            if (PHP_VERSION_ID >= 80000 && null !== $refAttribute = $refProperty->getAttributes(self::INDEXABLE_ANN_NAME)[0] ?? null) {
+                $indexableAnnotationConfig = $refAttribute->newInstance();
+            }
+
+            if (null === $indexableAnnotationConfig) {
+                $indexableAnnotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::INDEXABLE_ANN_NAME);
+                if (PHP_VERSION_ID >= 80000) {
+                    trigger_deprecation(
+                        'odandb/doctrine-ciphersweet-encryption-bundle',
+                        '0.10.5',
+                        'The support of annotation is deprecated and will be remove in doctrine-ciphersweet-encryption-bundle 1.0'
+                    );
+                }
+            }
 
             if ($indexableAnnotationConfig instanceof IndexableField) {
                 $contexts []= ['refProperty' => $refProperty, 'indexableConfig' => $indexableAnnotationConfig];
@@ -128,7 +140,7 @@ class IndexableFieldsService
             }
 
             $cleanValue = $value;
-            $valueCleanerMethod = $indexableAnnotationConfig->valuePreprocessMethod ?? null;
+            $valueCleanerMethod = $indexableAnnotationConfig->valuePreprocessMethod;
             if ($valueCleanerMethod !== null && (method_exists($entity, $valueCleanerMethod) || method_exists(get_class($entity), $valueCleanerMethod))) {
                 $cleanValue = $entity->$valueCleanerMethod($value);
             }
@@ -136,7 +148,7 @@ class IndexableFieldsService
             // On appelle le service de génération des index de filtre qui va créer la collection de pattern possibles
             // en fonction de la ou des méthodes renseignées en annotation
             // Puis récupérer chaque "blind_index" associé à enregistrer en base
-            $indexesMethods = $indexableAnnotationConfig->indexesGenerationMethods ?? [];
+            $indexesMethods = $indexableAnnotationConfig->indexesGenerationMethods;
 
             $indexesToEncrypt = $this->indexesGenerator->generateAndEncryptFilters($cleanValue, $indexesMethods);
             $indexesToEncrypt [] = $value;
@@ -150,7 +162,7 @@ class IndexableFieldsService
 
     /**
      * @param object $entity
-     * @param array['refProperty' => \ReflectionProperty, 'indexableConfig' => IndexableField] $fieldsContexts
+     * @param array{'refProperty': \ReflectionProperty, 'indexableConfig': IndexableField} $fieldsContexts
      * @param bool $needsToComputeChangeset
      *
      * @throws \Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException
@@ -172,7 +184,7 @@ class IndexableFieldsService
 
             $indexesToEncrypt = $searchIndexes[$refProperty->getName()];
 
-            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing ?? EncryptorInterface::DEFAULT_FAST_INDEXING);
+            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing);
 
             // On crée les instances d'objet filtre et on les associe à l'entité parente
             $indexEntities = [];

@@ -5,18 +5,35 @@ declare(strict_types=1);
 
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Configuration;
 
+use Attribute;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
+
 /**
  * The Encrypted class handles the @EncryptedField annotation.
  *
  * @Annotation
+ * @NamedArgumentConstructor
+ * @Target({"PROPERTY","ANNOTATION"})
  */
+#[Attribute(Attribute::TARGET_PROPERTY)]
 class EncryptedField
 {
-    /** @var int */
-    public int $filterBits = 32;
+    /** @readonly  */
+    public int $filterBits = EncryptorInterface::DEFAULT_FILTER_BITS;
 
-    public string $mappedTypedProperty;
+    /** @readonly  */
+    public ?string $mappedTypedProperty = null;
 
-    /** @var bool */
+    /** @readonly  */
     public bool $indexable = true;
+
+    public function __construct(
+        int $filterBits = EncryptorInterface::DEFAULT_FILTER_BITS,
+        ?string $mappedTypedProperty = null,
+        bool $indexable = true
+    ) {
+        $this->filterBits = $filterBits;
+        $this->mappedTypedProperty = $mappedTypedProperty;
+        $this->indexable = $indexable;
+    }
 }
