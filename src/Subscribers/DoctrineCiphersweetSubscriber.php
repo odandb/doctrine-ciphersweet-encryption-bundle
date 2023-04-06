@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Subscribers;
 
+use Doctrine\ORM\UnitOfWork;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\IndexableField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
@@ -77,6 +78,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         $unitOfWork = $em->getUnitOfWork();
 
         $this->postFlushDecryptQueue = [];
+        $this->entitiesToEncrypt = [];
 
         foreach ($unitOfWork->getScheduledEntityInsertions() as $entity) {
             $this->entityOnFlush($entity, $em);
@@ -93,16 +95,20 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
             $this->entityOnFlush($entity, $em);
             $unitOfWork->recomputeSingleEntityChangeSet($em->getClassMetadata(\get_class($entity)), $entity);
         }
+
+        // We flush the array of entities to encrypt after the loop to avoid memory leaks
+        $this->entitiesToEncrypt = [];
     }
 
     public function onClear(OnClearEventArgs $args): void
     {
-        unset($this->_originalValues, $this->decodedRegistry, $this->encryptedFieldCache, $this->postFlushDecryptQueue);
+        unset($this->_originalValues, $this->decodedRegistry, $this->encryptedFieldCache, $this->postFlushDecryptQueue, $this->entitiesToEncrypt);
 
         $this->_originalValues = [];
         $this->decodedRegistry = [];
         $this->encryptedFieldCache = [];
         $this->postFlushDecryptQueue = [];
+        $this->entitiesToEncrypt = [];
     }
 
     /**
@@ -117,7 +123,14 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
         $fields = [];
 
-        foreach ($this->getEncryptedFields($entity, $em) as $field) {
+        $ecnryptedFields = $this->getEncryptedFields($entity, $em);
+
+        // If no encryptedFields detected we early return as we don't need to process anything
+        if ($ecnryptedFields === []) {
+            return;
+        }
+
+        foreach ($ecnryptedFields as $field) {
             $fields[$field->getName()] = [
                 'field' => $field,
                 'value' => $field->getValue($entity),
@@ -178,11 +191,29 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
     /**
      * Process (encrypt/decrypt) entities fields.
+     *
+     * Upon encryption operation, if the entity is not new, we check if there are changes in the entity.
+     * If no changes, we early return.
+     * Make sure you call first $unitOfWork->computeChangeSet or $unitOfWork->recomputeSingleEntityChangeSet
+     * if you think your entity should be updated and has not been handled by entity manager.
      */
     public function processFields(object $entity, EntityManagerInterface $em, $isEncryptOperation = true, $force = null): bool
     {
         $properties = $this->getEncryptedFields($entity, $em);
         $unitOfWork = $em->getUnitOfWork();
+
+        // If there is no encrypted fields nor changes in given entity upon encryption operation and the entity is not new, we early return
+        // In case of new entity, there is no need to check for changes as they may not have been persisted nor computed yet
+        if (
+            $properties === []
+            || (
+                $isEncryptOperation
+                && $unitOfWork->getEntityState($entity) !== UnitOfWork::STATE_NEW
+                && $unitOfWork->getEntityChangeSet($entity) === []
+            )
+        ) {
+            return false;
+        }
 
         $oid = spl_object_id($entity);
 
