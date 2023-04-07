@@ -2,14 +2,18 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors;
 
 use ParagonIE\CipherSweet\BlindIndex;
 use ParagonIE\CipherSweet\CipherSweet;
 use ParagonIE\CipherSweet\EncryptedField;
+use ParagonIE\CipherSweet\Exception\BlindIndexNameCollisionException;
+use ParagonIE\CipherSweet\Exception\BlindIndexNotFoundException;
+use ParagonIE\CipherSweet\Exception\CipherSweetException;
+use ParagonIE\CipherSweet\Exception\CryptoOperationException;
+use Symfony\Contracts\Service\ResetInterface;
 
-class CiphersweetEncryptor implements EncryptorInterface
+class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
 {
     private CipherSweet $engine;
 
@@ -23,6 +27,15 @@ class CiphersweetEncryptor implements EncryptorInterface
         $this->biCache = [];
     }
 
+    /**
+     * {@inheritdoc}
+     *
+     * @throws CipherSweetException
+     * @throws CryptoOperationException
+     * @throws BlindIndexNotFoundException
+     * @throws BlindIndexNameCollisionException
+     * @throws \SodiumException
+     */
     public function prepareForStorage(object $entity, string $fieldName, string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
     {
         $entitClassName = \get_class($entity);
@@ -54,6 +67,13 @@ class CiphersweetEncryptor implements EncryptorInterface
         return $this->doEncrypt($entitClassName, $fieldName, $string, $index, $filterBits, $fastIndexing);
     }
 
+    /**
+     * @throws CipherSweetException
+     * @throws CryptoOperationException
+     * @throws BlindIndexNotFoundException
+     * @throws BlindIndexNameCollisionException
+     * @throws \SodiumException
+     */
     protected function doEncrypt(string $entitClassName, string $fieldName, string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
     {
         $encryptedField =  (new EncryptedField($this->engine, $entitClassName, $fieldName));
@@ -65,9 +85,11 @@ class CiphersweetEncryptor implements EncryptorInterface
 
         $result = $encryptedField->prepareForStorage($string);
 
+        // Cache for encrypt/decrypt
         $this->cache[$entitClassName][$fieldName][$string] = $result[0];
         $this->cache[$entitClassName][$fieldName][$result[0]] = $string;
 
+        // Cache blind index
         if ($index) {
             $this->biCache[$entitClassName][$fieldName][$string] = $result[1][$fieldName.'_bi'];
         }
@@ -75,32 +97,51 @@ class CiphersweetEncryptor implements EncryptorInterface
         return $result;
     }
 
-    public function decrypt(string $entity_classname, string $fieldName, string $string, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    /**
+     * {@inheritdoc}
+     *
+     * @throws CipherSweetException
+     * @throws CryptoOperationException
+     */
+    public function decrypt(string $entityClassName, string $fieldName, string $string, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
         // If $string is not encrypted, we return it as is.
         if (!$this->isValueEncrypted($string)) {
             return $string;
         }
 
-        if (isset($this->cache[$entity_classname][$fieldName][$string])) {
-            return $this->cache[$entity_classname][$fieldName][$string];
+        if (isset($this->cache[$entityClassName][$fieldName][$string])) {
+            return $this->cache[$entityClassName][$fieldName][$string];
         }
 
-        return $this->doDecrypt($entity_classname, $fieldName, $string);
+        return $this->doDecrypt($entityClassName, $fieldName, $string);
     }
 
-    protected function doDecrypt(string $entity_classname, string $fieldName, string $string): string
+    /**
+     * @throws CipherSweetException
+     * @throws CryptoOperationException
+     */
+    protected function doDecrypt(string $entityClassName, string $fieldName, string $string): string
     {
-        $decryptedValue = (new EncryptedField($this->engine, $entity_classname, $fieldName))
+        $decryptedValue = (new EncryptedField($this->engine, $entityClassName, $fieldName))
             ->decryptValue($string);
 
-        $this->cache[$entity_classname][$fieldName][$string] = $decryptedValue;
-        $this->cache[$entity_classname][$fieldName][$decryptedValue] = $string;
+        $this->cache[$entityClassName][$fieldName][$string] = $decryptedValue;
+        $this->cache[$entityClassName][$fieldName][$decryptedValue] = $string;
 
         return $decryptedValue;
     }
 
-    public function getBlindIndex($entityName, $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    /**
+     * {@inheritdoc}
+     *
+     * @throws CryptoOperationException
+     * @throws CipherSweetException
+     * @throws BlindIndexNotFoundException
+     * @throws BlindIndexNameCollisionException
+     * @throws \SodiumException
+     */
+    public function getBlindIndex(string $entityName, string $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
         if (isset($this->biCache[$entityName][$fieldName][$value])) {
             return $this->biCache[$entityName][$fieldName][$value];
@@ -109,7 +150,14 @@ class CiphersweetEncryptor implements EncryptorInterface
         return $this->doGetBlindIndex($entityName, $fieldName, $value, $filterBits, $fastIndexing);
     }
 
-    private function doGetBlindIndex($entityName, $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    /**
+     * @throws CryptoOperationException
+     * @throws CipherSweetException
+     * @throws BlindIndexNotFoundException
+     * @throws BlindIndexNameCollisionException
+     * @throws \SodiumException
+     */
+    protected function doGetBlindIndex(string $entityName, string $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
         $index = (new EncryptedField($this->engine, $entityName, $fieldName))
             ->addBlindIndex(
@@ -122,6 +170,9 @@ class CiphersweetEncryptor implements EncryptorInterface
         return $index;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getPrefix(): string
     {
         return $this->engine->getBackend()->getPrefix();
@@ -132,5 +183,9 @@ class CiphersweetEncryptor implements EncryptorInterface
         return $value !== null && strpos($value, $this->getPrefix()) === 0;
     }
 
-
+    public function reset(): void
+    {
+        $this->cache = [];
+        $this->biCache = [];
+    }
 }

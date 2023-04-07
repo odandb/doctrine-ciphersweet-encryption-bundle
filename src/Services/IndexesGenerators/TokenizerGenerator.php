@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators;
 
-
-class TokenizerGenerator
+class TokenizerGenerator implements IndexesGeneratorInterface
 {
-    /**
-     * @param string $string
-     * @return array
-     */
-    public function generate(string $string): array
+    public function generate(string $value): array
     {
-        $string = trim(preg_replace(array('/[^a-zA-Z0-9\-]/', '/\s+/'), ' ', $string));
-        return explode(' ', $string);
+        $value = trim(preg_replace(array('/[^a-zA-Z0-9\-]/', '/\s+/'), ' ', $value));
+        return explode(' ', $value);
+    }
+
+    public static function getIndexKey(): string
+    {
+        return 'TokenizerGenerator';
     }
 }

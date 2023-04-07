@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;

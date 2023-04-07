@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Configuration;
 
 use Attribute;
@@ -22,18 +21,18 @@ class EncryptedField
     public int $filterBits = EncryptorInterface::DEFAULT_FILTER_BITS;
 
     /** @readonly  */
-    public ?string $mappedTypedProperty = null;
+    public bool $indexable = true;
 
     /** @readonly  */
-    public bool $indexable = true;
+    public ?string $mappedTypedProperty = null;
 
     public function __construct(
         int $filterBits = EncryptorInterface::DEFAULT_FILTER_BITS,
-        ?string $mappedTypedProperty = null,
-        bool $indexable = true
+        bool $indexable = true,
+        ?string $mappedTypedProperty = null
     ) {
         $this->filterBits = $filterBits;
-        $this->mappedTypedProperty = $mappedTypedProperty;
         $this->indexable = $indexable;
+        $this->mappedTypedProperty = $mappedTypedProperty;
     }
 }

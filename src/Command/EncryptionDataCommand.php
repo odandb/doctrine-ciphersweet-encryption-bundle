@@ -38,10 +38,10 @@ class EncryptionDataCommand extends Command
         $this->entityManager = $entityManager;
         $this->encryptor = $encryptor;
 
-        parent::__construct(self::$defaultName);
+        parent::__construct();
     }
 
-    public function configure()
+    public function configure(): void
     {
         $this
             ->setAliases([self::$defaultAlias])

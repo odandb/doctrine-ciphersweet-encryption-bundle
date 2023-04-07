@@ -1,0 +1,19 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  # Controller
+  Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Controller\:
+    resource: 'Controller'
+    tags: [ 'controller.service_arguments' ]
+
+  # Encrypt
+  Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Encryptors\CiphersweetEncryptorObservable:
+    arguments:
+      - '@encryption.paragon.cipher_sweet'
+  Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface: '@Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Encryptors\CiphersweetEncryptorObservable'
+
+  # Repository
+  Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Repository\MyEntityAttributeIndexesRepository: ~
+  Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Repository\MyEntityAttributeRepository: ~

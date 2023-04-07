@@ -12,9 +12,11 @@ use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 
 class EncryptedFieldsService
 {
+    /** @deprecated */
     private Reader $annReader;
 
-    public function __construct(Reader $annReader) {
+    public function __construct(Reader $annReader)
+    {
         $this->annReader = $annReader;
     }
 

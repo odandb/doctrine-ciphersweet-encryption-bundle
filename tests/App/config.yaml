@@ -1,0 +1,24 @@
+imports:
+    - { resource: services.yaml }
+
+framework:
+    secret: '123456789'
+    http_method_override: false
+    router:
+        utf8: true
+        resource: '%kernel.project_dir%/routing.yaml'
+        strict_requirements: ~
+    test: true
+    profiler:
+        collect: false
+    cache:
+        pools:
+            doctrine.result_cache_pool:
+                adapter: cache.app
+            doctrine.system_cache_pool:
+                adapter: cache.system
+
+doctrine:
+    dbal:
+        driver: 'pdo_sqlite'
+        path: '%kernel.project_dir%/data.sqlite'

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Command;
 
 use ParagonIE\ConstantTime\Hex;
@@ -13,7 +12,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(name: 'odb:enc:generate-string-key', description: 'Generate default encryption key for StringProvider (one of the different key provider managed by Ciphersweet library).')]
-class EncryptionKeyStringProviderGenerator extends Command
+class EncryptionKeyStringProviderGeneratorCommand extends Command
 {
     /** @deprecated  */
     protected static $defaultName = 'odb:enc:generate-string-key';
@@ -29,6 +28,9 @@ class EncryptionKeyStringProviderGenerator extends Command
         ;
     }
 
+    /**
+     * @throws \Exception
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);

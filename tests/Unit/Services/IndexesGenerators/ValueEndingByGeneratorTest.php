@@ -7,8 +7,7 @@ use PHPUnit\Framework\TestCase;
 
 class ValueEndingByGeneratorTest extends TestCase
 {
-
-    public function testGenerate()
+    public function testGenerate(): void
     {
         $generator = new ValueEndingByGenerator();
 
