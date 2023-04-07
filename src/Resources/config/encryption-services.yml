@@ -3,6 +3,7 @@ services:
     class: Odandb\DoctrineCiphersweetEncryptionBundle\Subscribers\DoctrineCiphersweetSubscriber
     arguments:
       - "@annotation_reader"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\EncryptedFieldsService"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Encryptors\\CiphersweetEncryptor"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexableFieldsService"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\PropertyHydratorService"
@@ -24,6 +25,12 @@ services:
     public: true
     arguments: ["@ParagonIE\\CipherSweet\\CipherSweet"]
 
+  Odandb\DoctrineCiphersweetEncryptionBundle\Services\EncryptedFieldsService:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\EncryptedFieldsService
+    public: true
+    arguments:
+      - "@annotation_reader"
+
   Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService:
     class: Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService
     public: true
@@ -31,6 +38,24 @@ services:
       - "@annotation_reader"
       - "@Doctrine\\ORM\\EntityManagerInterface"
       - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\IndexesGenerator"
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Command\CheckEncryptionCommand:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Command\CheckEncryptionCommand
+    public: true
+    arguments:
+      - "@Doctrine\\ORM\\EntityManagerInterface"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Services\\EncryptedFieldsService"
+    tags:
+      - { name: console.command }
+
+  Odandb\DoctrineCiphersweetEncryptionBundle\Command\EncryptionDataCommand:
+    class: Odandb\DoctrineCiphersweetEncryptionBundle\Command\EncryptionDataCommand
+    public: true
+    arguments:
+      - "@Doctrine\\ORM\\EntityManagerInterface"
+      - "@Odandb\\DoctrineCiphersweetEncryptionBundle\\Encryptors\\EncryptorInterface"
+    tags:
+      - { name: console.command }
 
   Odandb\DoctrineCiphersweetEncryptionBundle\Command\GenerateIndexesCommand:
     class: Odandb\DoctrineCiphersweetEncryptionBundle\Command\GenerateIndexesCommand
