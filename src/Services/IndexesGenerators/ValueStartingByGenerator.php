@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexesGenerators;
 
 class ValueStartingByGenerator implements IndexesGeneratorInterface
@@ -16,5 +15,10 @@ class ValueStartingByGenerator implements IndexesGeneratorInterface
         }
 
         return $possibleValues;
+    }
+
+    public static function getIndexKey(): string
+    {
+        return 'ValueStartingByGenerator';
     }
 }

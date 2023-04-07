@@ -1,0 +1,14 @@
+list_entities:
+  path: /entities
+  controller: Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Controller\TestController::entityList
+  methods: GET
+
+create_entity:
+  path: /entity
+  controller: Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Controller\TestController::createEntity
+  methods: POST
+
+update_entity:
+  path: /entity/{id}
+  controller: Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Controller\TestController::updateEntity
+  methods: PUT

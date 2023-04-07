@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/phpunit-bootstrap.php"
+         colors="true"
+         verbose="true" >
+
+    <php>
+        <ini name="display_errors" value="1" />
+        <ini name="error_reporting" value="-1" />
+        <server name="KERNEL_CLASS" value="Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Kernel" />
+        <server name="APP_ENV" value="test" force="true" />
+        <server name="APP_DEBUG" value="true" force="true" />
+        <server name="SHELL_VERBOSITY" value="-1" />
+        <server name="SYMFONY_DEPRECATIONS_HELPER" value="max[total]=67&amp;max[self]=3" />
+        <env name="DOCTRINE_CIPHERSWEET_KEY" value="d6e9b37eacf3da581519a71f29a1d08e5552d3cf490d75db33b1c6f8e4b4fe50"/>
+    </php>
+
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Functional">
+            <directory>./tests/Functional</directory>
+        </testsuite>
+    </testsuites>
+
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory>./src/</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">src/Entity</directory>
+            <directory suffix=".php">src/Exception</directory>
+        </exclude>
+    </coverage>
+
+    <listeners>
+        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener" />
+    </listeners>
+</phpunit>

@@ -2,24 +2,20 @@
 
 declare(strict_types=1);
 
-if (isset($_ENV['BOOTSTRAP_CLEAR_CACHE_ENV'])) {
-    // executes the "php bin/console cache:clear" command
-    passthru(sprintf(
-        'APP_ENV=%s php "%s/App/bin/console" cache:clear --no-warmup --quiet',
-        $_ENV['BOOTSTRAP_CLEAR_CACHE_ENV'],
-        __DIR__
-    ));
-}
-
 use Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Kernel;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Model\MyEntityAttribute;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-require __DIR__.'/App/config/bootstrap.php';
+require __DIR__ . '/../vendor/autoload.php';
 
+// Clean up from previous runs
+@exec('rm -rf ' . escapeshellarg(__DIR__ . '/App/var'));
+@exec('mkdir ' . escapeshellarg(__DIR__ . '/App/var'));
 
-$kernel = new Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+// Create schema
+$kernel = new Kernel('test', false);
 $output = new ConsoleOutput();
 $application = new Application($kernel);
 $application->setAutoExit(false);
@@ -37,3 +33,12 @@ $runCommand('doctrine:schema:drop', [
     '--full-database' => true,
 ]);
 $runCommand('doctrine:schema:create', []);
+
+
+$em = $kernel->getContainer()->get('doctrine')->getManager();
+$entities = [];
+for ($i = 0; $i < 4; ++$i) {
+    $entities[] = $entity = new MyEntityAttribute('ODB' . $i, $i);
+    $em->persist($entity);
+}
+$em->flush();

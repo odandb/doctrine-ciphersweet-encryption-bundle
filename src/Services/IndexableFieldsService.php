@@ -2,34 +2,37 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Services;
 
-
-use Doctrine\ORM\EntityRepository;
-use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\IndexableField;
-use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Entity\IndexedEntityInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\MissingPropertyFromReflectionException;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManagerInterface;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 class IndexableFieldsService
 {
     public const INDEXABLE_ANN_NAME = IndexableField::class;
 
-    private Reader $annReader;
+    /** @deprecated */
+    private ?Reader $annReader;
     private EntityManagerInterface $em;
     private IndexesGenerator $indexesGenerator;
+    private PropertyAccessorInterface $propertyAccessor;
 
-    public function __construct(Reader $annReader, EntityManagerInterface $em, IndexesGenerator $generator)
+    public function __construct(?Reader $annReader, EntityManagerInterface $em, IndexesGenerator $generator, PropertyAccessorInterface $propertyAccessor)
     {
         $this->annReader = $annReader;
         $this->em = $em;
         $this->indexesGenerator = $generator;
+        $this->propertyAccessor = $propertyAccessor;
     }
 
+    /**
+     * Chunks all data ID of the entity
+     */
     public function getChunksForMultiThread(string $className, int $chuncksLength): array
     {
         $repo = $this->em->getRepository($className);
@@ -41,22 +44,28 @@ class IndexableFieldsService
         return array_chunk(array_column($result, 'id'), $chuncksLength);
     }
 
-    public function buildContext(string $className, ?array $fieldnames): array
+    /**
+     * @param null|array<int, string> $fieldNames
+     *
+     * @return array<int, array{refProperty: \ReflectionProperty, indexableConfig: IndexableField}>
+     *
+     * @throws MissingPropertyFromReflectionException
+     */
+    public function buildContext(string $className, ?array $fieldNames): array
     {
         $contexts = [];
 
         $classMetadata = $this->em->getClassMetadata($className);
 
-        if ($fieldnames === [] || $fieldnames === null) {
-            $fieldnames = array_map(
+        if (empty($fieldNames)) {
+            $fieldNames = array_map(
                 static function (\ReflectionProperty $refProperty): string {return $refProperty->name;},
                 $classMetadata->getReflectionProperties()
             );
         }
 
-        foreach ($fieldnames as $fieldname) {
+        foreach ($fieldNames as $fieldname) {
             $refProperty = $classMetadata->getReflectionProperty($fieldname);
-
             if ($refProperty === null) {
                 throw new MissingPropertyFromReflectionException(sprintf("No refProperty found for fieldname %s", $fieldname));
             }
@@ -66,7 +75,7 @@ class IndexableFieldsService
                 $indexableAnnotationConfig = $refAttribute->newInstance();
             }
 
-            if (null === $indexableAnnotationConfig) {
+            if (null === $indexableAnnotationConfig && null !== $this->annReader) {
                 $indexableAnnotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::INDEXABLE_ANN_NAME);
                 if (PHP_VERSION_ID >= 80000) {
                     trigger_deprecation(
@@ -85,20 +94,23 @@ class IndexableFieldsService
         return $contexts;
     }
 
+    /**
+     * Remove all (or by ids) the search possibilities of an entity field
+     *
+     * @param array<int, array{refProperty: \ReflectionProperty, indexableConfig: IndexableField}> $fieldsContexts
+     * @param null|array<int, string> $ids
+     */
     public function purgeFiltersForContextAndIds(array $fieldsContexts, ?array $ids): void
     {
-        /**
-         * @var \ReflectionProperty $refProperty
-         * @var IndexableField $indexableAnnotationConfig
-         */
         foreach($fieldsContexts as ['refProperty' => $refProperty, 'indexableConfig' => $indexableAnnotationConfig]) {
             $qb = $this->em->createQueryBuilder()
                 ->delete()
-                ->from($indexableAnnotationConfig->indexesEntityClass, 'f');
-            $qb->where('f.fieldname=:fieldname')
-                ->setParameter('fieldname', $refProperty->name);
+                ->from($indexableAnnotationConfig->indexesEntityClass, 'f')
+                ->where('f.fieldname=:fieldname')
+                ->setParameter('fieldname', $refProperty->name)
+            ;
 
-            if ($ids !== null && $ids !== []) {
+            if (!empty($ids)) {
                 $qb->andWhere('f.targetEntity IN (:ids)')
                     ->setParameter('ids', $ids);
             }
@@ -108,13 +120,14 @@ class IndexableFieldsService
     }
 
     /**
-     * @throws \ReflectionException
-     * @throws \Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException
+     * Generate and save all (or by ids) the search possibilities of an entity
+     *
+     * @param null|array<int, string> $ids
+     * @param array<int, array{refProperty: \ReflectionProperty, indexableConfig: IndexableField}> $fieldsContexts
      */
     public function handleFilterableFieldsForChunck(string $className, ?array $ids, array $fieldsContexts, bool $needsToComputeChangeset = false): void
     {
-        $criteria = $ids !== null && $ids !== [] ? ['id' => $ids] : [];
-        $chunck = $this->em->getRepository($className)->findBy($criteria);
+        $chunck = $this->em->getRepository($className)->findBy(!empty($ids) ? ['id' => $ids] : []);
         foreach ($chunck as $entity) {
             $this->handleIndexableFieldsForEntity($entity, $fieldsContexts, $needsToComputeChangeset);
             $this->em->flush();
@@ -122,61 +135,17 @@ class IndexableFieldsService
     }
 
     /**
-     * Permet de générer les valeurs indexables pour une entité et un contexte donné.
+     * Generate and save the search possibilities of an entity field
      *
-     * @param object $entity
-     * @param array $fieldsContexts
-     * @return array
-     * @throws \Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException
-     */
-    public function generateIndexableValuesForEntity(object $entity, array $fieldsContexts): array
-    {
-        $searchIndexes = [];
-
-        foreach ($fieldsContexts as ['refProperty' => $refProperty, 'indexableConfig' => $indexableAnnotationConfig]) {
-            $value = $refProperty->getValue($entity);
-            if ($value === null || $value === '') {
-                continue;
-            }
-
-            $cleanValue = $value;
-            $valueCleanerMethod = $indexableAnnotationConfig->valuePreprocessMethod;
-            if ($valueCleanerMethod !== null && (method_exists($entity, $valueCleanerMethod) || method_exists(get_class($entity), $valueCleanerMethod))) {
-                $cleanValue = $entity->$valueCleanerMethod($value);
-            }
-
-            // On appelle le service de génération des index de filtre qui va créer la collection de pattern possibles
-            // en fonction de la ou des méthodes renseignées en annotation
-            // Puis récupérer chaque "blind_index" associé à enregistrer en base
-            $indexesMethods = $indexableAnnotationConfig->indexesGenerationMethods;
-
-            $indexesToEncrypt = $this->indexesGenerator->generateAndEncryptFilters($cleanValue, $indexesMethods);
-            $indexesToEncrypt [] = $value;
-            $indexesToEncrypt = array_unique($indexesToEncrypt);
-
-            $searchIndexes[$refProperty->getName()] = $indexesToEncrypt;
-        }
-
-        return $searchIndexes;
-    }
-
-    /**
-     * @param object $entity
-     * @param array{'refProperty': \ReflectionProperty, 'indexableConfig': IndexableField} $fieldsContexts
-     * @param bool $needsToComputeChangeset
+     * @param array{refProperty: \ReflectionProperty, indexableConfig: IndexableField} $fieldsContexts
      *
-     * @throws \Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException
-     * @throws \ReflectionException
+     * @throws UndefinedGeneratorException|\ReflectionException
      */
     public function handleIndexableFieldsForEntity(object $entity, array $fieldsContexts, bool $needsToComputeChangeset = false): void
     {
+        $className = get_class($entity);
         $searchIndexes = $this->generateIndexableValuesForEntity($entity, $fieldsContexts);
 
-        /**
-         * @var \ReflectionProperty $refProperty
-         * @var EncryptedField $annotationConfig
-         * @var IndexableField $indexableAnnotationConfig
-         */
         foreach ($fieldsContexts as ['refProperty' => $refProperty, 'indexableConfig' => $indexableAnnotationConfig]) {
             if (!isset($searchIndexes[$refProperty->getName()])) {
                 continue;
@@ -184,9 +153,9 @@ class IndexableFieldsService
 
             $indexesToEncrypt = $searchIndexes[$refProperty->getName()];
 
-            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues(get_class($entity), $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing);
+            $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues($className, $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing);
 
-            // On crée les instances d'objet filtre et on les associe à l'entité parente
+            // We create the filter object instances and associate them to the parent entity
             $indexEntities = [];
             $indexEntityClass = $indexableAnnotationConfig->indexesEntityClass;
 
@@ -201,13 +170,57 @@ class IndexableFieldsService
                     $indexEntities [] = $indexEntity;
 
                     $this->em->persist($indexEntity);
+
                     if ($needsToComputeChangeset) {
                         $this->em->getUnitOfWork()->computeChangeSet($classMetadata, $indexEntity);
                     }
                 }
             }
+
             $setter = 'set' . $refClass->getShortName();
-            $entity->$setter($indexEntities);
+            if ($this->propertyAccessor->isWritable($entity, $setter)) {
+                $this->propertyAccessor->setValue($entity, $setter, $indexEntities);
+            }
         }
+    }
+
+    /**
+     * Generate the search possibilities of an entity field
+     *
+     * @param array{refProperty: \ReflectionProperty, indexableConfig: IndexableField} $fieldsContexts
+     *
+     * @return array<string, array<int, string>>
+     *
+     * @throws UndefinedGeneratorException
+     */
+    public function generateIndexableValuesForEntity(object $entity, array $fieldsContexts): array
+    {
+        $searchIndexes = [];
+
+        foreach ($fieldsContexts as ['refProperty' => $refProperty, 'indexableConfig' => $indexableAnnotationConfig]) {
+            $value = $refProperty->getValue($entity);
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $cleanValue = $value;
+            $valueCleanerMethod = $indexableAnnotationConfig->valuePreprocessMethod;
+            if ($valueCleanerMethod !== null && method_exists($entity, $valueCleanerMethod)) {
+                $cleanValue = $entity->$valueCleanerMethod($value);
+            }
+
+            // We call the filter index generation service which will create the collection of possible patterns
+            // according to the method(s) specified in the annotation
+            // Then retrieve each associated "blind_index" to save in database
+            $indexesMethods = $indexableAnnotationConfig->indexesGenerationMethods;
+
+            $indexesToEncrypt = $this->indexesGenerator->generateAndEncryptFilters($cleanValue, $indexesMethods);
+            $indexesToEncrypt[] = $value;
+            $indexesToEncrypt = array_unique($indexesToEncrypt);
+
+            $searchIndexes[$refProperty->getName()] = $indexesToEncrypt;
+        }
+
+        return $searchIndexes;
     }
 }

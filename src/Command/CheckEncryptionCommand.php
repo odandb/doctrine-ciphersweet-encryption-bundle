@@ -32,7 +32,7 @@ class CheckEncryptionCommand extends Command
         $this->entityManager = $entityManager;
         $this->encryptedFieldsService = $encryptedFieldsService;
 
-        parent::__construct(self::$defaultName);
+        parent::__construct();
     }
 
     protected function configure(): void

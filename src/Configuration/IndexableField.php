@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Configuration;
 
 use Attribute;
@@ -24,7 +23,10 @@ class IndexableField
     /** @readonly  */
     public bool $autoRefresh = true;
 
-    /** @readonly  */
+    /**
+     * @readonly
+     * @var array<int, string>
+     */
     public array $indexesGenerationMethods = [];
 
     /** @readonly  */

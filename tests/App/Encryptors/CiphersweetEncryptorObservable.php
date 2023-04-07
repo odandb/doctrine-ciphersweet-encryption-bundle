@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-
-namespace Odandb\DoctrineCiphersweetEncryptionBundle\Tests\Encryptors;
-
+namespace Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Encryptors;
 
 use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\CiphersweetEncryptor;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
 
-class CiphersweetEncryptorObservable extends CiphersweetEncryptor
+class CiphersweetEncryptorObservable extends CiphersweetEncryptor implements EncryptorInterface
 {
     public array $callsCount = [
         'encrypt' => 0,
@@ -21,9 +20,9 @@ class CiphersweetEncryptorObservable extends CiphersweetEncryptor
         return parent::doEncrypt($entitClassName, $fieldName, $string, $index, $filterBits, $fastIndexing);
     }
 
-    protected function doDecrypt(string $entity_classname, string $fieldName, string $string): string
+    protected function doDecrypt(string $entityClassName, string $fieldName, string $string): string
     {
         $this->callsCount['decrypt']++;
-        return parent::doDecrypt($entity_classname, $fieldName, $string);
+        return parent::doDecrypt($entityClassName, $fieldName, $string);
     }
 }

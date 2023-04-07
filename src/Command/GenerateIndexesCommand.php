@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Command;
 
+use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\MissingPropertyFromReflectionException;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,13 +20,14 @@ use Symfony\Component\Process\Process;
 class GenerateIndexesCommand extends Command
 {
     /** @deprecated  */
-    protected static $defaultName = 'odb:enc:indexes';
+    protected static $defaultName = self::CONSOLE_CMD;
     /** @deprecated  */
     protected static $defaultDescription = 'Determine the Blind Index plan for a given field.';
 
     protected static string $defaultAlias = 'o:e:i';
 
     protected const CONSOLE_ENTRYPOINT = 'bin/console';
+    protected const CONSOLE_CMD = 'odb:enc:indexes';
     protected const NB_RUNNING_PROCESSES = 5;
     protected const CHUNCKS = 50;
     protected const SUBPROCESS_TIMEOUT = 600; // Timeout in seconds
@@ -35,11 +36,11 @@ class GenerateIndexesCommand extends Command
 
     protected IndexableFieldsService $indexableFieldsService;
 
-    public function __construct(IndexableFieldsService $indexableFieldsService, string $name = null)
+    public function __construct(IndexableFieldsService $indexableFieldsService)
     {
-        parent::__construct($name);
-
         $this->indexableFieldsService = $indexableFieldsService;
+
+        parent::__construct();
     }
 
     protected function configure(): void
@@ -59,6 +60,9 @@ class GenerateIndexesCommand extends Command
         ;
     }
 
+    /**
+     * @throws MissingPropertyFromReflectionException
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new SymfonyStyle($input, $output);
@@ -98,6 +102,9 @@ class GenerateIndexesCommand extends Command
         return 0;
     }
 
+    /**
+     * @return array<int, string>
+     */
     protected function validateParallelOptions(InputInterface $input): array
     {
         $optionsInError = [];
@@ -112,6 +119,11 @@ class GenerateIndexesCommand extends Command
         return $optionsInError;
     }
 
+    /**
+     * @param array{nb_process: int, timeout: int, chuncks: int} $parallelConfig
+     *
+     * @throws MissingPropertyFromReflectionException
+     */
     protected function initAndRunFiltersGenerationSubProcesses(string $className, array $parallelConfig): void
     {
 
@@ -148,15 +160,15 @@ class GenerateIndexesCommand extends Command
         $this->io->success('Done in ' . (time() - $start).'s');
     }
 
+    /**
+     * @param array<int, Process> $pools
+     */
     private function runProcesses(array $pools): void
     {
         $finishedProcesses = [];
         $isSomethingRunning = true;
         while ($isSomethingRunning) {
             $isSomethingRunning = false;
-            /**
-             * @var Process $process
-             */
             foreach ($pools as $key => $process) {
                 if ($process->isRunning()) {
                     $isSomethingRunning = true;
@@ -175,6 +187,9 @@ class GenerateIndexesCommand extends Command
         }
     }
 
+    /**
+     * @throws MissingPropertyFromReflectionException
+     */
     protected function regenerateFiltersByFieldnameAndIds(string $className, ?string $fieldnames, ?string $ids, bool $purge = false): void
     {
         $fieldnamesAr = $fieldnames !== null ? explode(',', $fieldnames) : null;
@@ -188,7 +203,7 @@ class GenerateIndexesCommand extends Command
         }
 
         $this->io->comment('Generating Indexes');
-        $this->indexableFieldsService->handleFilterableFieldsForChunck($className, $idsAr, $contexts, false);
+        $this->indexableFieldsService->handleFilterableFieldsForChunck($className, $idsAr, $contexts);
         if ($idsAr !== null) {
             $this->io->success(sprintf('Done for %s class and %d ids', $className, count($idsAr)));
         } else {

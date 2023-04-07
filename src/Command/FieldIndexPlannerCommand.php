@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Command;
 
-
+use ParagonIE\CipherSweet\Exception\PlannerException;
 use ParagonIE\CipherSweet\Planner\FieldIndexPlanner;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -30,6 +29,9 @@ class FieldIndexPlannerCommand extends Command
         ;
     }
 
+    /**
+     * @throws PlannerException
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
