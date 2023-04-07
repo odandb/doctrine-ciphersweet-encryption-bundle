@@ -9,6 +9,7 @@ use Doctrine\ORM\UnitOfWork;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\IndexableField;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
+use Odandb\DoctrineCiphersweetEncryptionBundle\Services\EncryptedFieldsService;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Services\IndexableFieldsService;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Services\PropertyHydratorService;
 use Doctrine\Common\Annotations\Reader;
@@ -30,6 +31,8 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
 
     private EncryptorInterface $encryptor;
     private Reader $annReader;
+
+    private EncryptedFieldsService  $encryptedFieldsService;
 
     public array $_originalValues = [];
 
@@ -58,12 +61,14 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     public function __construct(
         Reader                  $annReader,
+        EncryptedFieldsService  $encryptedFieldsService,
         EncryptorInterface      $encryptorClass,
         IndexableFieldsService  $indexableFieldsService,
         PropertyHydratorService $propertyHydratorService
     )
     {
         $this->annReader = $annReader;
+        $this->encryptedFieldsService = $encryptedFieldsService;
         $this->encryptor = $encryptorClass;
         $this->indexableFieldsService = $indexableFieldsService;
         $this->propertyHydratorService = $propertyHydratorService;
@@ -159,30 +164,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
         }
 
         $meta = $em->getClassMetadata($className);
-        $encryptedFields = [];
-
-        foreach ($meta->getReflectionProperties() as $refProperty) {
-            if (PHP_VERSION_ID >= 80000 && isset($refProperty->getAttributes(self::ENCRYPTED_ANN_NAME)[0])) {
-                $refProperty->setAccessible(true);
-                $encryptedFields[] = $refProperty;
-
-                continue;
-            }
-
-            /** @var \ReflectionProperty $refProperty */
-            if ($this->annReader->getPropertyAnnotation($refProperty, self::ENCRYPTED_ANN_NAME)) {
-                $refProperty->setAccessible(true);
-                $encryptedFields[] = $refProperty;
-
-                if (PHP_VERSION_ID >= 80000) {
-                    trigger_deprecation(
-                        'odandb/doctrine-ciphersweet-encryption-bundle',
-                        '0.10.5',
-                        'The support of annotation is deprecated and will be remove in doctrine-ciphersweet-encryption-bundle 1.0'
-                    );
-                }
-            }
-        }
+        $encryptedFields = $this->encryptedFieldsService->getEncryptedFields($meta);
 
         $this->encryptedFieldCache[$className] = $encryptedFields;
 
