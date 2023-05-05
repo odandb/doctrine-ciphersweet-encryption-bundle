@@ -380,7 +380,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriber
      */
     private function isValueEncrypted(?string $value): bool
     {
-        return $value !== null && strpos($value, $this->encryptor->getPrefix()) === 0;
+        return $this->encryptor->isValueEncrypted($value);
     }
 
     /**
