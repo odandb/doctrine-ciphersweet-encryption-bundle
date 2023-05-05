@@ -57,4 +57,29 @@ class CiphersweetEncryptorTest extends TestCase
         $this->assertSame('test', $result);
         $this->assertSame(0, $this->encryptor->callsCount['decrypt'], 'doDecrypt is never called because cache is set upon prepareForStorage call');
     }
+
+    public function testDecryptNonEncryptedValue()
+    {
+        [$encryptedString] = $this->encryptor->prepareForStorage(new MyEntity('132456'), 'account_name', 'test');
+
+        $decryptedString = $this->encryptor->decrypt(MyEntity::class, 'account_name', $encryptedString);
+        $untouchedString = $this->encryptor->decrypt(MyEntity::class, 'account_name', $decryptedString);
+
+        $this->assertSame($decryptedString, $untouchedString);
+        $this->assertSame(1, $this->encryptor->callsCount['encrypt']);
+        $this->assertSame(0, $this->encryptor->callsCount['decrypt'], 'doDecrypt is never called either because of cache set upon prepareForStorage call or we detect value is already decrypted');
+    }
+
+    public function testEncryptAlreadyEncryptedValue()
+    {
+        [$encryptedString] = $this->encryptor->prepareForStorage(new MyEntity('132456'), 'account_name', 'test', false);
+        [$unTouchedEncryptedString] = $this->encryptor->prepareForStorage(new MyEntity('132456'), 'account_name', 'test', false);
+        [$unTouchedEncryptedStringBis, $bi] = $this->encryptor->prepareForStorage(new MyEntity('132456'), 'account_name', 'test', true);
+
+        $this->assertSame($encryptedString, $unTouchedEncryptedString);
+        $this->assertSame($encryptedString, $unTouchedEncryptedStringBis);
+        $this->assertSame(8, mb_strlen($bi['account_name_bi']));
+        $this->assertSame(1, $this->encryptor->callsCount['encrypt']);
+        $this->assertSame(0, $this->encryptor->callsCount['decrypt']);
+    }
 }

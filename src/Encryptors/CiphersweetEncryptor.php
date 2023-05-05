@@ -27,6 +27,18 @@ class CiphersweetEncryptor implements EncryptorInterface
     {
         $entitClassName = \get_class($entity);
 
+        if ($this->isValueEncrypted($string)) {
+            // If the value is already encrypted and there is no need to get blind index,
+            // We return it as is.
+            if (!$index) {
+                return [$string, []];
+            }
+
+            // Otherwise, we try to decrypt it and we generate the corresponding Blind Index
+            $decryptedString = $this->decrypt($entitClassName, $fieldName, $string, $filterBits, $fastIndexing);
+            return [$string, [$fieldName.'_bi' => $this->getBlindIndex($entitClassName, $fieldName, $decryptedString, $filterBits, $fastIndexing)]];
+        }
+
         $output = [];
         if (isset($this->cache[$entitClassName][$fieldName][$string])) {
             $output[] = $this->cache[$entitClassName][$fieldName][$string];
@@ -65,6 +77,11 @@ class CiphersweetEncryptor implements EncryptorInterface
 
     public function decrypt(string $entity_classname, string $fieldName, string $string, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
+        // If $string is not encrypted, we return it as is.
+        if (!$this->isValueEncrypted($string)) {
+            return $string;
+        }
+
         if (isset($this->cache[$entity_classname][$fieldName][$string])) {
             return $this->cache[$entity_classname][$fieldName][$string];
         }
@@ -109,4 +126,11 @@ class CiphersweetEncryptor implements EncryptorInterface
     {
         return $this->engine->getBackend()->getPrefix();
     }
+
+    public function isValueEncrypted(?string $value): bool
+    {
+        return $value !== null && strpos($value, $this->getPrefix()) === 0;
+    }
+
+
 }

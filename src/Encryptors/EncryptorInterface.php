@@ -21,4 +21,6 @@ interface EncryptorInterface
     public function getBlindIndex($entityName, $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string;
 
     public function getPrefix(): string;
+
+    public function isValueEncrypted(?string $value): bool;
 }
