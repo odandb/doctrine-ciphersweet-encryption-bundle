@@ -47,6 +47,7 @@ class EncryptionDataCommand extends Command
             ->setAliases([self::$defaultAlias])
             ->addOption('encrypt', null, InputOption::VALUE_NONE, 'Encrypt data')
             ->addOption('decrypt', null, InputOption::VALUE_NONE, 'Decrypt data')
+            ->addOption('blind', 'b', InputOption::VALUE_OPTIONAL, 'Get the blind index on the encrypt process')
             ->addArgument('class', InputArgument::OPTIONAL, 'Class name of the entity')
             ->addArgument('field', InputArgument::OPTIONAL, 'Field name of the entity')
             ->addArgument('value', InputArgument::OPTIONAL, 'Value of the entity');
@@ -89,14 +90,19 @@ class EncryptionDataCommand extends Command
             $fieldName = $this->askFieldName($className, $input, $output);
         }
 
+        $blind = [];
         if ($encryptDecrypt === 'encrypt') {
             $value = $input->getArgument('value') ?? $io->ask('What is the value of the entity you want to encrypt ?');
-            [$result,] = $this->encryptor->prepareForStorage((new \ReflectionClass($className))->newInstanceWithoutConstructor(), $fieldName, $value, false);
+            [$result, $blind] = $this->encryptor->prepareForStorage((new \ReflectionClass($className))->newInstanceWithoutConstructor(), $fieldName, $value, (bool) $input->getOption('encrypt'));
         } else {
             $value = $input->getArgument('value') ?? $io->ask('What is the value of the entity you want to decrypt ?');
             $result = $this->encryptor->decrypt($className->getName(), $fieldName, $value);
         }
+
         $io->success(sprintf('Result: [%s]', $result));
+        if (!empty($blind)) {
+            $io->success(sprintf('Blind: [%s]', implode(', ', $blind)));
+        }
 
         return Command::SUCCESS;
     }
