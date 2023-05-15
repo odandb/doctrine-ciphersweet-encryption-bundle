@@ -64,6 +64,9 @@ class EncryptionDataCommand extends Command
             $encryptDecrypt = $io->choice('Do you want to encrypt or decrypt data?', ['encrypt', 'decrypt']);
         }
 
+        $kernel = $this->getApplication()->getKernel();
+        $io->comment(sprintf('<info>%s</info> data for the <info>%s</info> environment', ucfirst($encryptDecrypt), $kernel->getEnvironment()));
+
         $metas = $this->entityManager->getMetadataFactory()->getAllMetadata();
         $metaData = [];
         foreach ($metas as $meta) {
@@ -87,7 +90,7 @@ class EncryptionDataCommand extends Command
         }
 
         if($fieldName === null) {
-            $fieldName = $this->askFieldName($className, $input, $output);
+            $fieldName = $this->askFieldName($metaData[$className], $input, $output);
         }
 
         $blind = [];
@@ -96,7 +99,7 @@ class EncryptionDataCommand extends Command
             [$result, $blind] = $this->encryptor->prepareForStorage((new \ReflectionClass($className))->newInstanceWithoutConstructor(), $fieldName, $value, (bool) $input->getOption('encrypt'));
         } else {
             $value = $input->getArgument('value') ?? $io->ask('What is the value of the entity you want to decrypt ?');
-            $result = $this->encryptor->decrypt($className->getName(), $fieldName, $value);
+            $result = $this->encryptor->decrypt($className, $fieldName, $value);
         }
 
         $io->success(sprintf('Result: [%s]', $result));
@@ -107,7 +110,7 @@ class EncryptionDataCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function askClassName(array $metaData, InputInterface $input, OutputInterface $output): ClassMetadata
+    private function askClassName(array $metaData, InputInterface $input, OutputInterface $output): string
     {
         $io = new SymfonyStyle($input, $output);
         $question = new Question('Please enter an entity className'. PHP_EOL );
@@ -115,12 +118,13 @@ class EncryptionDataCommand extends Command
         $io->newLine();
 
         $question->setNormalizer(static function ($value) use ($metaData) {
-            // $value can be null here
-            return $metaData[$value] ?? null;
+            $answer = $metaData[$value] ?? null;
+
+            return $answer instanceof ClassMetadata ? $answer->getName() : null;
         });
 
-        $question->setValidator(static function ($answer) use ($metaData) {
-            if ($answer instanceof ClassMetadata === false) {
+        $question->setValidator(static function (?string $answer) {
+            if (null === $answer) {
                 throw new \RuntimeException(
                     'The className does not exists nor has encrypted fields in its definition.'
                 );
