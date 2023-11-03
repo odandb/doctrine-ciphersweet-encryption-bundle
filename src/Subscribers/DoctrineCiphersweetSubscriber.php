@@ -22,6 +22,9 @@ use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Events;
 use Symfony\Contracts\Service\ResetInterface;
 
+/**
+ * @internal
+ */
 class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetInterface
 {
     public const ENCRYPTED_ANN_NAME = EncryptedField::class;

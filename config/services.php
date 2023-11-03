@@ -88,6 +88,7 @@ return static function (ContainerConfigurator $container): void {
                 service('encryption.indexes_generator'),
                 service('property_accessor')
             ])
+        ->alias(IndexableFieldsService::class, 'encryption.indexable_field')
 
         // Property
         ->set('encryption.property_hydrator', PropertyHydratorService::class)
