@@ -8,6 +8,9 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
 
+/**
+ * @internal
+ */
 class PropertyHydratorService
 {
     private PropertyInfoExtractorInterface $propertyInfoExtractor;
