@@ -99,7 +99,7 @@ return static function (ContainerConfigurator $container): void {
 
         ->set('encryption.subscriber', DoctrineCiphersweetSubscriber::class)
             ->args([
-                service('annotation_reader'), // @deprecated
+                service('annotation_reader')->nullOnInvalid(), // @deprecated
                 service('encryption.encrypted_fields'),
                 service(EncryptorInterface::class),
                 service('encryption.indexable_field'),
@@ -109,7 +109,7 @@ return static function (ContainerConfigurator $container): void {
 
         ->set('encryption.encrypted_fields', EncryptedFieldsService::class)
             ->args([
-                service('annotation_reader'), // @deprecated
+                service('annotation_reader')->nullOnInvalid(), // @deprecated
             ])
     ;
 };

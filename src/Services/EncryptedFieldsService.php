@@ -13,9 +13,9 @@ use Odandb\DoctrineCiphersweetEncryptionBundle\Configuration\EncryptedField;
 class EncryptedFieldsService
 {
     /** @deprecated */
-    private Reader $annReader;
+    private ?Reader $annReader;
 
-    public function __construct(Reader $annReader)
+    public function __construct(?Reader $annReader)
     {
         $this->annReader = $annReader;
     }
@@ -38,7 +38,7 @@ class EncryptedFieldsService
             }
 
             /** @var \ReflectionProperty $refProperty */
-            if ($this->annReader->getPropertyAnnotation($refProperty, EncryptedField::class)) {
+            if (null !== $this->annReader && $this->annReader->getPropertyAnnotation($refProperty, EncryptedField::class)) {
                 $refProperty->setAccessible(true);
                 $encryptedFields[] = $refProperty;
 

@@ -2,6 +2,7 @@ imports:
     - { resource: services.yaml }
 
 framework:
+    annotations: false
     secret: '123456789'
     http_method_override: false
     router:
