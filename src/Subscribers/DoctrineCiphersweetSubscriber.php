@@ -31,7 +31,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
     public const INDEXABLE_ANN_NAME = IndexableField::class;
 
     /** @deprecated */
-    private Reader $annReader;
+    private ?Reader $annReader;
     private EncryptorInterface $encryptor;
     private IndexableFieldsService $indexableFieldsService;
     private PropertyHydratorService $propertyHydratorService;
@@ -77,7 +77,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
     private array $entitiesToEncrypt = [];
 
     public function __construct(
-        Reader                  $annReader,
+        ?Reader                 $annReader,
         EncryptedFieldsService  $encryptedFieldsService,
         EncryptorInterface      $encryptorClass,
         IndexableFieldsService  $indexableFieldsService,
@@ -330,7 +330,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
             }
         }
 
-        if (null === $annotationConfig && null === $indexableAnnotationConfig) {
+        if (null === $annotationConfig && null === $indexableAnnotationConfig && null !== $this->annReader) {
             $annotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::ENCRYPTED_ANN_NAME);
             $indexableAnnotationConfig = $this->annReader->getPropertyAnnotation($refProperty, self::INDEXABLE_ANN_NAME);
 
