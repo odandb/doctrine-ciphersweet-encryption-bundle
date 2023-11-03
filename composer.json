@@ -21,7 +21,7 @@
         }
     ],
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.0",
         "ext-mbstring": "*",
         "doctrine/annotations": "^1.10 || ^2.0",
         "doctrine/doctrine-bundle": "^2.7.1",
