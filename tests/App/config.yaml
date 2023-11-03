@@ -4,12 +4,15 @@ imports:
 framework:
     annotations: false
     secret: '123456789'
+    handle_all_throwables: true
     http_method_override: false
     router:
         utf8: true
         resource: '%kernel.project_dir%/routing.yaml'
         strict_requirements: ~
     test: true
+    php_errors:
+        log: true
     profiler:
         collect: false
     cache:
