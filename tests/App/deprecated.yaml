@@ -1,3 +1,0 @@
-sensio_framework_extra:
-  router:
-    annotations: true # Deprecated; use routing annotations of Symfony core instead

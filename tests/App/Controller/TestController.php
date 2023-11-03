@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Odandb\DoctrineCiphersweetEncryptionBundle\Encryptors\EncryptorInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Tests\App\Model\MyEntityAttribute;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\AsController;
