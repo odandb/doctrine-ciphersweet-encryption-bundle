@@ -85,8 +85,7 @@ return static function (ContainerConfigurator $container): void {
             ->args([
                 service('annotation_reader')->nullOnInvalid(), // @deprecated
                 service(EntityManagerInterface::class),
-                service('encryption.indexes_generator'),
-                service('property_accessor')
+                service('encryption.indexes_generator')
             ])
         ->alias(IndexableFieldsService::class, 'encryption.indexable_field')
 
