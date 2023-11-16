@@ -96,7 +96,7 @@ class EncryptionDataCommand extends Command
         $blind = [];
         if ($encryptDecrypt === 'encrypt') {
             $value = $input->getArgument('value') ?? $io->ask('What is the value of the entity you want to encrypt ?');
-            [$result, $blind] = $this->encryptor->prepareForStorage((new \ReflectionClass($className))->newInstanceWithoutConstructor(), $fieldName, $value, (bool) $input->getOption('encrypt'));
+            [$result, $blind] = $this->encryptor->prepareForStorage((new \ReflectionClass($className))->newInstanceWithoutConstructor(), $fieldName, $value, (bool) $input->getOption('blind'));
         } else {
             $value = $input->getArgument('value') ?? $io->ask('What is the value of the entity you want to decrypt ?');
             $result = $this->encryptor->decrypt($className, $fieldName, $value);
