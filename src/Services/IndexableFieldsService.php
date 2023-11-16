@@ -10,7 +10,6 @@ use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\MissingPropertyFromRefl
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManagerInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 class IndexableFieldsService
 {
@@ -20,14 +19,12 @@ class IndexableFieldsService
     private ?Reader $annReader;
     private EntityManagerInterface $em;
     private IndexesGenerator $indexesGenerator;
-    private PropertyAccessorInterface $propertyAccessor;
 
-    public function __construct(?Reader $annReader, EntityManagerInterface $em, IndexesGenerator $generator, PropertyAccessorInterface $propertyAccessor)
+    public function __construct(?Reader $annReader, EntityManagerInterface $em, IndexesGenerator $generator)
     {
         $this->annReader = $annReader;
         $this->em = $em;
         $this->indexesGenerator = $generator;
-        $this->propertyAccessor = $propertyAccessor;
     }
 
     /**
@@ -175,11 +172,6 @@ class IndexableFieldsService
                         $this->em->getUnitOfWork()->computeChangeSet($classMetadata, $indexEntity);
                     }
                 }
-            }
-
-            $setter = 'set' . $refClass->getShortName();
-            if ($this->propertyAccessor->isWritable($entity, $setter)) {
-                $this->propertyAccessor->setValue($entity, $setter, $indexEntities);
             }
         }
     }
