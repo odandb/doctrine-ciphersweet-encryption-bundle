@@ -10,6 +10,7 @@ use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\MissingPropertyFromRefl
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManagerInterface;
 use Odandb\DoctrineCiphersweetEncryptionBundle\Exception\UndefinedGeneratorException;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 class IndexableFieldsService
 {
@@ -19,12 +20,14 @@ class IndexableFieldsService
     private ?Reader $annReader;
     private EntityManagerInterface $em;
     private IndexesGenerator $indexesGenerator;
+    private PropertyAccessorInterface $propertyAccessor;
 
-    public function __construct(?Reader $annReader, EntityManagerInterface $em, IndexesGenerator $generator)
+    public function __construct(?Reader $annReader, EntityManagerInterface $em, IndexesGenerator $generator, PropertyAccessorInterface $propertyAccessor)
     {
         $this->annReader = $annReader;
         $this->em = $em;
         $this->indexesGenerator = $generator;
+        $this->propertyAccessor = $propertyAccessor;
     }
 
     /**
@@ -122,11 +125,11 @@ class IndexableFieldsService
      * @param null|array<int, string> $ids
      * @param array<int, array{refProperty: \ReflectionProperty, indexableConfig: IndexableField}> $fieldsContexts
      */
-    public function handleFilterableFieldsForChunck(string $className, ?array $ids, array $fieldsContexts, bool $needsToComputeChangeset = false): void
+    public function handleFilterableFieldsForChunck(string $className, ?array $ids, array $fieldsContexts, bool $runtimeMode = false): void
     {
         $chunck = $this->em->getRepository($className)->findBy(!empty($ids) ? ['id' => $ids] : []);
         foreach ($chunck as $entity) {
-            $this->handleIndexableFieldsForEntity($entity, $fieldsContexts, $needsToComputeChangeset);
+            $this->handleIndexableFieldsForEntity($entity, $fieldsContexts, $runtimeMode);
             $this->em->flush();
         }
     }
@@ -138,7 +141,7 @@ class IndexableFieldsService
      *
      * @throws UndefinedGeneratorException|\ReflectionException
      */
-    public function handleIndexableFieldsForEntity(object $entity, array $fieldsContexts, bool $needsToComputeChangeset = false): void
+    public function handleIndexableFieldsForEntity(object $entity, array $fieldsContexts, bool $runtimeMode = false): void
     {
         $className = get_class($entity);
         $searchIndexes = $this->generateIndexableValuesForEntity($entity, $fieldsContexts);
@@ -152,9 +155,13 @@ class IndexableFieldsService
 
             $indexes = $this->indexesGenerator->generateBlindIndexesFromPossibleValues($className, $refProperty->getName(), $indexesToEncrypt, $indexableAnnotationConfig->fastIndexing);
 
-            // We create the filter object instances and associate them to the parent entity
+            // We create the filter object instances and associate them to the parent entity if is needed
             $indexEntities = [];
             $indexEntityClass = $indexableAnnotationConfig->indexesEntityClass;
+
+            // If we are in runtime with autoRefresh indexes, we need to compute the change set and set the inverse property to overwrite the existing one. With the orphanRemoval option, the old collection will be deleted.
+            // In other cases, the old indexes remain and must be purged by you.
+            $needToCompute = $runtimeMode && $indexableAnnotationConfig->autoRefresh;
 
             $refClass = new \ReflectionClass($indexEntityClass);
             $classMetadata = $this->em->getClassMetadata($refClass->getName());
@@ -168,9 +175,15 @@ class IndexableFieldsService
 
                     $this->em->persist($indexEntity);
 
-                    if ($needsToComputeChangeset) {
+                    if ($needToCompute) {
                         $this->em->getUnitOfWork()->computeChangeSet($classMetadata, $indexEntity);
                     }
+                }
+            }
+
+            if ($needToCompute) {
+                if ($this->propertyAccessor->isWritable($entity, $refClass->getShortName())) {
+                    $this->propertyAccessor->setValue($entity, $refClass->getShortName(), $indexEntities);
                 }
             }
         }
