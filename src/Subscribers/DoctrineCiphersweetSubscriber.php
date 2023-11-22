@@ -201,7 +201,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
      * @param object $entity
      * @param EntityManagerInterface $em
      */
-    private function entityOnFlush(object $entity, EntityManagerInterface $em): void
+    private function entityOnFlush(#[\SensitiveParameter] object $entity, EntityManagerInterface $em): void
     {
         $objId = spl_object_id($entity);
 
@@ -230,7 +230,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
     /**
      * @return \ReflectionProperty[]
      */
-    private function getEncryptedFields(object $entity, ObjectManager $em): array
+    private function getEncryptedFields(#[\SensitiveParameter] object $entity, ObjectManager $em): array
     {
         $className = \get_class($entity);
         if (isset($this->encryptedFieldCache[$className])) {
@@ -252,7 +252,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
      * Make sure you call first $unitOfWork->computeChangeSet or $unitOfWork->recomputeSingleEntityChangeSet
      * if you think your entity should be updated and has not been handled by entity manager.
      */
-    public function processFields(object $entity, ObjectManager $em, bool $isEncryptOperation = true, bool $force = false): bool
+    public function processFields(#[\SensitiveParameter] object $entity, ObjectManager $em, bool $isEncryptOperation = true, bool $force = false): bool
     {
         $properties = $this->getEncryptedFields($entity, $em);
         $unitOfWork = $em->getUnitOfWork();
@@ -314,7 +314,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
      *     entityClassName: string
      * }
      */
-    private function buildContext(string $entityClassName, \ReflectionProperty $refProperty): array
+    private function buildContext(#[\SensitiveParameter] string $entityClassName, #[\SensitiveParameter] \ReflectionProperty $refProperty): array
     {
         $annotationConfig = null;
         $indexableAnnotationConfig = null;
@@ -372,7 +372,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
      *     entityClassName: string
      * } $context
      */
-    private function handleEncryptOperation(object $entity, int $oid, $value, \ReflectionProperty $refProperty, array $context, bool $force): ?string
+    private function handleEncryptOperation(#[\SensitiveParameter] object $entity, #[\SensitiveParameter] int $oid, #[\SensitiveParameter] $value, #[\SensitiveParameter] \ReflectionProperty $refProperty, array $context, bool $force): ?string
     {
         [
             'annotationConfig' => [
@@ -417,7 +417,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
     /**
      * @param mixed $value
      */
-    private function handleDecryptOperation(int $oid, $value, \ReflectionProperty $refProperty, array $context): string
+    private function handleDecryptOperation(#[\SensitiveParameter] int $oid, #[\SensitiveParameter] $value, #[\SensitiveParameter] \ReflectionProperty $refProperty, array $context): string
     {
         /**
          * @var IndexableField $indexableAnnotationConfig
@@ -439,12 +439,12 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
         return $value;
     }
 
-    private function isValueEncrypted(?string $value): bool
+    private function isValueEncrypted(#[\SensitiveParameter] ?string $value): bool
     {
         return $this->encryptor->isValueEncrypted($value);
     }
 
-    private function storeValue(object $entity, \ReflectionProperty $refProperty, string $value, bool $storeBlindIndex, int $filterBits, bool $fastIndexing = true)
+    private function storeValue(#[\SensitiveParameter] object $entity, #[\SensitiveParameter] \ReflectionProperty $refProperty, #[\SensitiveParameter] string $value, bool $storeBlindIndex, int $filterBits, bool $fastIndexing = true)
     {
         [$value, $indexes] = $this->encryptor->prepareForStorage($entity, $refProperty->getName(), $value, $storeBlindIndex, $filterBits, $fastIndexing);
 
@@ -461,7 +461,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
     /**
      * Generate and save indexable value
      */
-    private function storeIndexes(object $entity, \ReflectionProperty $refProperty, ?IndexableField $indexableAnnotationConfig): void
+    private function storeIndexes(#[\SensitiveParameter] object $entity, #[\SensitiveParameter] \ReflectionProperty $refProperty, ?IndexableField $indexableAnnotationConfig): void
     {
         if ($indexableAnnotationConfig === null) {
             return;
@@ -479,7 +479,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
      *
      * @param object $entity Some doctrine entity
      */
-    private function addToDecodedRegistry(object $entity): void
+    private function addToDecodedRegistry(#[\SensitiveParameter] object $entity): void
     {
         $this->decodedRegistry[spl_object_id($entity)] = true;
     }
@@ -489,7 +489,7 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
      *
      * @param object $entity Some doctrine entity
      */
-    private function hasInDecodedRegistry(object $entity): bool
+    private function hasInDecodedRegistry(#[\SensitiveParameter] object $entity): bool
     {
         return isset($this->decodedRegistry[spl_object_id($entity)]);
     }

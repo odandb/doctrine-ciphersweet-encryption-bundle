@@ -36,7 +36,7 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
      * @throws BlindIndexNameCollisionException
      * @throws \SodiumException
      */
-    public function prepareForStorage(object $entity, string $fieldName, string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
+    public function prepareForStorage(#[\SensitiveParameter] object $entity, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
     {
         $entitClassName = \get_class($entity);
 
@@ -74,7 +74,7 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
      * @throws BlindIndexNameCollisionException
      * @throws \SodiumException
      */
-    protected function doEncrypt(string $entitClassName, string $fieldName, string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
+    protected function doEncrypt(#[\SensitiveParameter] string $entitClassName, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] string $string, bool $index = true, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): array
     {
         $encryptedField =  (new EncryptedField($this->engine, $entitClassName, $fieldName));
         if ($index) {
@@ -103,7 +103,7 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
      * @throws CipherSweetException
      * @throws CryptoOperationException
      */
-    public function decrypt(string $entityClassName, string $fieldName, string $string, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    public function decrypt(#[\SensitiveParameter] string $entityClassName, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] string $string, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
         // If $string is not encrypted, we return it as is.
         if (!$this->isValueEncrypted($string)) {
@@ -121,7 +121,7 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
      * @throws CipherSweetException
      * @throws CryptoOperationException
      */
-    protected function doDecrypt(string $entityClassName, string $fieldName, string $string): string
+    protected function doDecrypt(#[\SensitiveParameter] string $entityClassName, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] string $string): string
     {
         $decryptedValue = (new EncryptedField($this->engine, $entityClassName, $fieldName))
             ->decryptValue($string);
@@ -141,7 +141,7 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
      * @throws BlindIndexNameCollisionException
      * @throws \SodiumException
      */
-    public function getBlindIndex(string $entityName, string $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    public function getBlindIndex(#[\SensitiveParameter] string $entityName, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
         if (isset($this->biCache[$entityName][$fieldName][$value])) {
             return $this->biCache[$entityName][$fieldName][$value];
@@ -157,7 +157,7 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
      * @throws BlindIndexNameCollisionException
      * @throws \SodiumException
      */
-    protected function doGetBlindIndex(string $entityName, string $fieldName, string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
+    protected function doGetBlindIndex(#[\SensitiveParameter] string $entityName, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] string $value, int $filterBits = self::DEFAULT_FILTER_BITS, bool $fastIndexing = self::DEFAULT_FAST_INDEXING): string
     {
         $index = (new EncryptedField($this->engine, $entityName, $fieldName))
             ->addBlindIndex(
@@ -178,9 +178,9 @@ class CiphersweetEncryptor implements EncryptorInterface, ResetInterface
         return $this->engine->getBackend()->getPrefix();
     }
 
-    public function isValueEncrypted(?string $value): bool
+    public function isValueEncrypted(#[\SensitiveParameter] ?string $value): bool
     {
-        return $value !== null && strpos($value, $this->getPrefix()) === 0;
+        return $value !== null && str_starts_with($value, $this->getPrefix());
     }
 
     public function reset(): void

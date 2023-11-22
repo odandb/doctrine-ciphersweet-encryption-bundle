@@ -25,7 +25,7 @@ class PropertyHydratorService
     /**
      * @param mixed $value
      */
-    public function getMappedFieldValueAsString(object $entity, ?string $propertyName, $value): string
+    public function getMappedFieldValueAsString(#[\SensitiveParameter] object $entity, #[\SensitiveParameter] ?string $propertyName, #[\SensitiveParameter] $value): string
     {
         if ($propertyName !== null) {
             $value = $this->propertyAccessor->getValue($entity, $propertyName);
@@ -34,7 +34,7 @@ class PropertyHydratorService
         return (string) $value;
     }
 
-    public function setValueToMappedField(object $entity, string $value, ?string $propertyName): void
+    public function setValueToMappedField(#[\SensitiveParameter] object $entity, #[\SensitiveParameter] string $value, #[\SensitiveParameter] ?string $propertyName): void
     {
         if ($propertyName === null) {
             return;

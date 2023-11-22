@@ -16,13 +16,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Component\Process\Process;
 
-#[AsCommand(name: 'odb:enc:indexes', description: 'Determine the Blind Index plan for a given field.')]
+#[AsCommand(name: 'odb:enc:indexes', description: 'Generates matching indexes')]
 class GenerateIndexesCommand extends Command
 {
     /** @deprecated  */
     protected static $defaultName = self::CONSOLE_CMD;
     /** @deprecated  */
-    protected static $defaultDescription = 'Determine the Blind Index plan for a given field.';
+    protected static $defaultDescription = 'Generates matching indexes';
 
     protected static string $defaultAlias = 'o:e:i';
 
@@ -124,7 +124,7 @@ class GenerateIndexesCommand extends Command
      *
      * @throws MissingPropertyFromReflectionException
      */
-    protected function initAndRunFiltersGenerationSubProcesses(string $className, array $parallelConfig): void
+    protected function initAndRunFiltersGenerationSubProcesses(#[\SensitiveParameter] string $className, array $parallelConfig): void
     {
 
         $start = time();
@@ -190,7 +190,7 @@ class GenerateIndexesCommand extends Command
     /**
      * @throws MissingPropertyFromReflectionException
      */
-    protected function regenerateFiltersByFieldnameAndIds(string $className, ?string $fieldnames, ?string $ids, bool $purge = false): void
+    protected function regenerateFiltersByFieldnameAndIds(#[\SensitiveParameter] string $className, #[\SensitiveParameter] ?string $fieldnames, ?string $ids, bool $purge = false): void
     {
         $fieldnamesAr = $fieldnames !== null ? explode(',', $fieldnames) : null;
         $idsAr = $ids !== null ? explode(',', $ids) : null;
