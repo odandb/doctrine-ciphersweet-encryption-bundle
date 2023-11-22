@@ -35,7 +35,7 @@ trait IndexedEntityAttributeTrait
         return $this->fieldname;
     }
 
-    public function setFieldname(string $fieldname): self
+    public function setFieldname(#[\SensitiveParameter] string $fieldname): self
     {
         $this->fieldname = $fieldname;
         return $this;
@@ -46,7 +46,7 @@ trait IndexedEntityAttributeTrait
         return $this->targetEntity;
     }
 
-    public function setTargetEntity(?object $targetEntity): self
+    public function setTargetEntity(#[\SensitiveParameter] ?object $targetEntity): self
     {
         $this->targetEntity = $targetEntity;
         return $this;
@@ -57,7 +57,7 @@ trait IndexedEntityAttributeTrait
         return $this->indexBi;
     }
 
-    public function setIndexBi(string $indexBi): self
+    public function setIndexBi(#[\SensitiveParameter] string $indexBi): self
     {
         $this->indexBi = $indexBi;
         return $this;

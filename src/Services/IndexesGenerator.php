@@ -29,7 +29,7 @@ class IndexesGenerator
      *
      * @throws UndefinedGeneratorException
      */
-    public function generateAndEncryptFilters(string $value, array $methods): array
+    public function generateAndEncryptFilters(#[\SensitiveParameter] string $value, array $methods): array
     {
         $possibleValuesAr = [$value];
 
@@ -59,7 +59,7 @@ class IndexesGenerator
      *
      * @return array<int, string>
      */
-    public function generateBlindIndexesFromPossibleValues(string $entityName, string $fieldName, array $possibleValues, bool $fastIndexing): array
+    public function generateBlindIndexesFromPossibleValues(#[\SensitiveParameter] string $entityName, #[\SensitiveParameter] string $fieldName, #[\SensitiveParameter] array $possibleValues, bool $fastIndexing): array
     {
         $possibleValues = array_unique($possibleValues);
 

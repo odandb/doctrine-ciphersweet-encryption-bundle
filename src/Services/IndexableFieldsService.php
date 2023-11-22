@@ -33,7 +33,7 @@ class IndexableFieldsService
     /**
      * Chunks all data ID of the entity
      */
-    public function getChunksForMultiThread(string $className, int $chuncksLength): array
+    public function getChunksForMultiThread(#[\SensitiveParameter] string $className, int $chuncksLength): array
     {
         $repo = $this->em->getRepository($className);
         $result = $repo->createQueryBuilder('c')
@@ -51,7 +51,7 @@ class IndexableFieldsService
      *
      * @throws MissingPropertyFromReflectionException
      */
-    public function buildContext(string $className, ?array $fieldNames): array
+    public function buildContext(#[\SensitiveParameter] string $className, #[\SensitiveParameter] ?array $fieldNames): array
     {
         $contexts = [];
 
@@ -125,7 +125,7 @@ class IndexableFieldsService
      * @param null|array<int, string> $ids
      * @param array<int, array{refProperty: \ReflectionProperty, indexableConfig: IndexableField}> $fieldsContexts
      */
-    public function handleFilterableFieldsForChunck(string $className, ?array $ids, array $fieldsContexts, bool $runtimeMode = false): void
+    public function handleFilterableFieldsForChunck(#[\SensitiveParameter] string $className, ?array $ids, array $fieldsContexts, bool $runtimeMode = false): void
     {
         $chunck = $this->em->getRepository($className)->findBy(!empty($ids) ? ['id' => $ids] : []);
         foreach ($chunck as $entity) {
@@ -141,7 +141,7 @@ class IndexableFieldsService
      *
      * @throws UndefinedGeneratorException|\ReflectionException
      */
-    public function handleIndexableFieldsForEntity(object $entity, array $fieldsContexts, bool $runtimeMode = false): void
+    public function handleIndexableFieldsForEntity(#[\SensitiveParameter] object $entity, array $fieldsContexts, bool $runtimeMode = false): void
     {
         $className = get_class($entity);
         $searchIndexes = $this->generateIndexableValuesForEntity($entity, $fieldsContexts);
@@ -198,7 +198,7 @@ class IndexableFieldsService
      *
      * @throws UndefinedGeneratorException
      */
-    public function generateIndexableValuesForEntity(object $entity, array $fieldsContexts): array
+    public function generateIndexableValuesForEntity(#[\SensitiveParameter] object $entity, array $fieldsContexts): array
     {
         $searchIndexes = [];
 
