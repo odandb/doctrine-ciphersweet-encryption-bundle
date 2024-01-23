@@ -70,6 +70,7 @@ return static function (ContainerConfigurator $container): void {
 
         // Indexes Generators
         ->set('encryption.indexes_generator', IndexesGenerator::class)
+            ->public()
             ->args([
                 abstract_arg('All services with tag "encryption.index_generator" are stored in a service locator by IndexGeneratorPass'),
                 service(EncryptorInterface::class)
