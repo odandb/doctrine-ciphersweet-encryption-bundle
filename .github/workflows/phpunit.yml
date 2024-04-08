@@ -1,93 +1,98 @@
 name: PHPUnit
 
 on:
-  push:
-  pull_request:
+    push:
+    pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+    cancel-in-progress: true
 
 jobs:
 
-  test:
-    name: "PHP ${{ matrix.php }} - Symfony ${{ matrix.symfony }}"
-    runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.can-fail }}
+    test:
+        name: "PHP ${{ matrix.php }} - Symfony ${{ matrix.symfony }}"
+        runs-on: ubuntu-latest
+        continue-on-error: ${{ matrix.can-fail }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Lowest Deps
-          - php: 8.1
-            symfony: 6.2.*
-            coverage: 'none'
-            composer-flags: '--prefer-stable --prefer-lowest'
-            can-fail: false
-          # LTS with latest stable PHP
-          - php: latest
-            symfony: 6.3.*
-            coverage: 'none'
-            composer-flags: '--prefer-stable'
-            can-fail: false
-          # Active release
-          - php: latest
-            symfony: 6.3.*
-            coverage: pcov
-            composer-flags: '--prefer-stable'
-            can-fail: false
-          # Development release
-          - php: nightly
-            symfony: 7.0.*@dev
-            coverage: 'none'
-            composer-flags: ''
-            can-fail: true
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    # Lowest Deps
+                    -   php: lowest
+                        symfony: 6.4.*
+                        coverage: 'none'
+                        composer-flags: '--prefer-stable --prefer-lowest'
+                        can-fail: false
+                    # LTS with latest stable PHP
+                    -   php: latest
+                        symfony: 6.4.*
+                        coverage: 'none'
+                        composer-flags: '--prefer-stable'
+                        can-fail: false
+                    # Active release
+                    -   php: latest
+                        symfony: 7.0.*
+                        coverage: pcov
+                        composer-flags: '--prefer-stable'
+                        can-fail: false
+                    # Development release
+                    -   php: nightly
+                        symfony: 7.1.*@dev
+                        coverage: 'none'
+                        composer-flags: ''
+                        can-fail: true
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+                with:
+                    fetch-depth: 2
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          tools: composer:v2, flex
-          coverage: ${{ matrix.coverage }}
-          ini-values: date.timezone=UTC,memory_limit=-1,session.gc_probability=0,apc.enable_cli=1,zend.assertions=1
-        env:
-          fail-fast: true
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php }}
+                    tools: composer:v2, flex
+                    coverage: ${{ matrix.coverage }}
+                    ini-values: date.timezone=UTC,memory_limit=-1,session.gc_probability=0,apc.enable_cli=1,zend.assertions=1
+                env:
+                    fail-fast: true
 
-      - name: Set Composer stability
-        if: matrix.symfony == '7.0.*@dev'
-        run: "composer config minimum-stability dev"
+            -   name: Set Composer stability
+                if: matrix.php == 'nightly'
+                run: "composer config minimum-stability dev"
 
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+            -   name: Get composer cache directory
+                id: composer-cache
+                run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
-      - name: Cache composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: php-${{ matrix.php }}-symfony-${{ matrix.symfony }}-composer-${{ hashFiles('**/composer.json') }}
-          restore-keys: php-${{ matrix.php }}-symfony-${{ matrix.symfony }}-composer-
+            -   name: Cache composer dependencies
+                uses: actions/cache@v4
+                with:
+                    path: ${{ steps.composer-cache.outputs.dir }}
+                    key: php-${{ matrix.php }}-symfony-${{ matrix.symfony }}-composer-${{ hashFiles('**/composer.json') }}
+                    restore-keys: php-${{ matrix.php }}-symfony-${{ matrix.symfony }}-composer-
 
-      - name: Install Composer dependencies
-        run: composer update ${{ matrix.composer-flags }} --no-interaction --no-progress --optimize-autoloader
-        env:
-          SYMFONY_REQUIRE: ${{ matrix.symfony }}
+            -   name: Install Composer dependencies
+                run: composer update ${{ matrix.composer-flags }} --no-interaction --no-progress --optimize-autoloader
+                env:
+                    SYMFONY_REQUIRE: ${{ matrix.symfony }}
 
-      - name: Run tests
-        run: composer test
+            -   name: Run tests
+                run: |
+                  if [[ "${{ matrix.coverage }}" == 'pcov' ]]; then
+                      composer test-coverage
+                  else
+                      composer test
+                  fi
 
-      - name: Monitor coverage
-        if: matrix.coverage != 'none'
-        uses: slavcodev/coverage-monitor-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          coverage_path: coverage-report.xml
-          threshold_alert: 60
-          threshold_warning: 80
+            -   name: Monitor coverage
+                if: matrix.coverage != 'none'
+                uses: slavcodev/coverage-monitor-action@v1
+                with:
+                    github_token: ${{ secrets.GITHUB_TOKEN }}
+                    coverage_path: coverage-report.xml
+                    threshold_alert: 60
+                    threshold_warning: 80
