@@ -106,7 +106,10 @@ return static function (ContainerConfigurator $container): void {
                 service('encryption.indexable_field'),
                 service('encryption.property_hydrator')
             ])
-            ->tag('doctrine.event_subscriber')
+            ->tag('doctrine.event_listener', ['event' => 'postLoad'])
+            ->tag('doctrine.event_listener', ['event' => 'onFlush'])
+            ->tag('doctrine.event_listener', ['event' => 'postFlush'])
+            ->tag('doctrine.event_listener', ['event' => 'onClear'])
 
         ->set('encryption.encrypted_fields', EncryptedFieldsService::class)
             ->args([

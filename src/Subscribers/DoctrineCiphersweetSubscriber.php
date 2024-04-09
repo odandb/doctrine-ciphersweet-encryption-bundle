@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Odandb\DoctrineCiphersweetEncryptionBundle\Subscribers;
 
-use Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\ORM\UnitOfWork;
@@ -25,7 +25,11 @@ use Symfony\Contracts\Service\ResetInterface;
 /**
  * @internal
  */
-class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetInterface
+#[AsDoctrineListener(event: Events::postLoad)]
+#[AsDoctrineListener(event: Events::onFlush)]
+#[AsDoctrineListener(event: Events::postFlush)]
+#[AsDoctrineListener(event: Events::onClear)]
+class DoctrineCiphersweetSubscriber implements ResetInterface
 {
     public const ENCRYPTED_ANN_NAME = EncryptedField::class;
     public const INDEXABLE_ANN_NAME = IndexableField::class;
@@ -89,19 +93,6 @@ class DoctrineCiphersweetSubscriber implements EventSubscriberInterface, ResetIn
         $this->encryptor = $encryptorClass;
         $this->indexableFieldsService = $indexableFieldsService;
         $this->propertyHydratorService = $propertyHydratorService;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSubscribedEvents(): array
-    {
-        return [
-            Events::postLoad,
-            Events::onFlush,
-            Events::postFlush,
-            Events::onClear,
-        ];
     }
 
     public function reset(): void
