@@ -17,6 +17,6 @@ class MyEntityAttributeIndexes implements IndexedEntityInterface
     use IndexedEntityAttributeTrait;
 
     #[ORM\ManyToOne(targetEntity: MyEntityAttribute::class)]
-    #[ORM\JoinColumn(name: 'target_entity_id', referencedColumnName: 'id', onDelete: 'CASCADE', nullable: false)]
+    #[ORM\JoinColumn(name: 'target_entity_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     protected object $targetEntity;
 }

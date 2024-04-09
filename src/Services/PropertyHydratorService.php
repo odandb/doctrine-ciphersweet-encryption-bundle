@@ -40,8 +40,12 @@ class PropertyHydratorService
             return;
         }
 
-        $propertyInfoType = $this->propertyInfoExtractor->getTypes(get_class($entity), $propertyName)[0];
-        $targetType = $propertyInfoType->getBuiltinType();
+        if (property_exists($this->propertyInfoExtractor, 'getType')) {
+            $targetType = (string) $this->propertyInfoExtractor->getType();
+        } else {
+            $propertyInfoType = $this->propertyInfoExtractor->getTypes(get_class($entity), $propertyName)[0];
+            $targetType = $propertyInfoType->getBuiltinType();
+        }
 
         if ($targetType !== Type::BUILTIN_TYPE_STRING) {
             settype($value, $targetType);
