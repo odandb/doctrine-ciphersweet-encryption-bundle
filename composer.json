@@ -23,7 +23,6 @@
     "require": {
         "php": ">=8.0",
         "ext-mbstring": "*",
-        "doctrine/annotations": "^1.10 || ^2.0",
         "doctrine/doctrine-bundle": "^2.8.0",
         "doctrine/orm": "^2.14 || ^3.0",
         "paragonie/ciphersweet": "^3.0 || ^4.0",

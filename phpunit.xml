@@ -13,7 +13,7 @@
         <server name="APP_ENV" value="test" force="true" />
         <server name="APP_DEBUG" value="true" force="true" />
         <server name="SHELL_VERBOSITY" value="-1" />
-        <server name="SYMFONY_DEPRECATIONS_HELPER" value="max[total]=67&amp;max[self]=3" />
+        <server name="SYMFONY_DEPRECATIONS_HELPER" value="max[total]=763&amp;max[self]=14" />
         <env name="DOCTRINE_CIPHERSWEET_KEY" value="d6e9b37eacf3da581519a71f29a1d08e5552d3cf490d75db33b1c6f8e4b4fe50"/>
     </php>
 
