@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Odandb\DoctrineCiphersweetEncryptionBundle;
 
 use Odandb\DoctrineCiphersweetEncryptionBundle\DependencyInjection\Compiler\IndexGeneratorPass;
+use Odandb\DoctrineCiphersweetEncryptionBundle\DependencyInjection\Compiler\TypeExtractorPass;
 use Odandb\DoctrineCiphersweetEncryptionBundle\DependencyInjection\DoctrineCiphersweetEncryptionExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
@@ -27,6 +28,7 @@ class OdandbDoctrineCiphersweetEncryptionBundle extends Bundle
     public function build(ContainerBuilder $container): void
     {
         $container->addCompilerPass(new IndexGeneratorPass());
+        $container->addCompilerPass(new TypeExtractorPass());
     }
 
     public function getPath(): string
