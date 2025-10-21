@@ -24,7 +24,7 @@
         "php": ">=8.2",
         "ext-mbstring": "*",
         "doctrine/doctrine-bundle": "^2.8.0",
-        "doctrine/orm": "^2.14 || ^3.0",
+        "doctrine/orm": "^2.14 || ^3.4",
         "paragonie/ciphersweet": "^3.0 || ^4.0",
         "symfony/config": "^6.4 || ^7.0",
         "symfony/console": "^6.4 || ^7.0",
