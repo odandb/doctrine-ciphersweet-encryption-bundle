@@ -140,7 +140,7 @@ class GenerateIndexesCommand extends Command
         $i = 0;
 
         foreach ($chuncks as $chunck) {
-            $process = new Process([$phpBinaryPath, static::CONSOLE_ENTRYPOINT, static::$defaultName, $className, '--ids='.implode(',', $chunck)]);
+            $process = new Process([$phpBinaryPath, static::CONSOLE_ENTRYPOINT, self::CONSOLE_CMD, $className, '--ids='.implode(',', $chunck)]);
             $process->setTimeout($parallelConfig['timeout']);
             $process->setTty(Process::isTtySupported());
 

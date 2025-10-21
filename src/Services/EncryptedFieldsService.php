@@ -29,7 +29,17 @@ class EncryptedFieldsService
     {
         $encryptedFields = [];
 
-        foreach ($meta->getReflectionProperties() as $refProperty) {
+        // ORM 3.4+ uses getPropertyAccessors(), older versions use getReflectionProperties()
+        $properties = method_exists($meta, 'getPropertyAccessors')
+            ? $meta->getPropertyAccessors()
+            : $meta->getReflectionProperties();
+
+        foreach ($properties as $property) {
+            // ORM 3.4+ returns PropertyAccessor objects, older versions return ReflectionProperty directly
+            $refProperty = method_exists($property, 'getUnderlyingReflector')
+                ? $property->getUnderlyingReflector()
+                : $property;
+
             if (PHP_VERSION_ID >= 80000 && isset($refProperty->getAttributes(EncryptedField::class)[0])) {
                 $refProperty->setAccessible(true);
                 $encryptedFields[] = $refProperty;

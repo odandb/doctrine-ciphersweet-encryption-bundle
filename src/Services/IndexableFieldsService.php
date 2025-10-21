@@ -58,16 +58,33 @@ class IndexableFieldsService
         $classMetadata = $this->em->getClassMetadata($className);
 
         if (empty($fieldNames)) {
-            $fieldNames = array_map(
-                static function (\ReflectionProperty $refProperty): string {return $refProperty->name;},
-                $classMetadata->getReflectionProperties()
-            );
+            // ORM 3.4+ uses getPropertyAccessors(), older versions use getReflectionProperties()
+            if (method_exists($classMetadata, 'getPropertyAccessors')) {
+                $fieldNames = array_map(
+                    static function ($propertyAccessor): string {return $propertyAccessor->getUnderlyingReflector()->name;},
+                    $classMetadata->getPropertyAccessors()
+                );
+            } else {
+                $fieldNames = array_map(
+                    static function (\ReflectionProperty $refProperty): string {return $refProperty->name;},
+                    $classMetadata->getReflectionProperties()
+                );
+            }
         }
 
         foreach ($fieldNames as $fieldname) {
-            $refProperty = $classMetadata->getReflectionProperty($fieldname);
-            if ($refProperty === null) {
-                throw new MissingPropertyFromReflectionException(sprintf("No refProperty found for fieldname %s", $fieldname));
+            // ORM 3.4+ uses getPropertyAccessor(), older versions use getReflectionProperty()
+            if (method_exists($classMetadata, 'getPropertyAccessor')) {
+                $propertyAccessor = $classMetadata->getPropertyAccessor($fieldname);
+                if ($propertyAccessor === null) {
+                    throw new MissingPropertyFromReflectionException(sprintf("No refProperty found for fieldname %s", $fieldname));
+                }
+                $refProperty = $propertyAccessor->getUnderlyingReflector();
+            } else {
+                $refProperty = $classMetadata->getReflectionProperty($fieldname);
+                if ($refProperty === null) {
+                    throw new MissingPropertyFromReflectionException(sprintf("No refProperty found for fieldname %s", $fieldname));
+                }
             }
 
             $indexableAnnotationConfig = null;
@@ -137,7 +154,7 @@ class IndexableFieldsService
     /**
      * Generate and save the search possibilities of an entity field
      *
-     * @param array{refProperty: \ReflectionProperty, indexableConfig: IndexableField} $fieldsContexts
+     * @param array<int, array{refProperty: \ReflectionProperty, indexableConfig: IndexableField}> $fieldsContexts
      *
      * @throws UndefinedGeneratorException|\ReflectionException
      */
