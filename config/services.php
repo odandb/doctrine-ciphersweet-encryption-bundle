@@ -94,7 +94,9 @@ return static function (ContainerConfigurator $container): void {
         // Property
         ->set('encryption.property_hydrator', PropertyHydratorService::class)
             ->args([
-                service('property_info'),
+                // Argument will be replaced by TypeExtractorPass
+                // Uses type_info.resolver if available (Symfony 7.1+), otherwise property_info
+                abstract_arg('Type extractor service (resolved by TypeExtractorPass)'),
                 service('property_accessor')
             ])
 

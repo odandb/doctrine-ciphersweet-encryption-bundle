@@ -20,7 +20,7 @@ jobs:
             matrix:
                 include:
                     # Lowest Deps
-                    -   php: lowest
+                    -   php: 8.2
                         symfony: 6.4.*
                         coverage: 'none'
                         composer-flags: '--prefer-stable --prefer-lowest'
